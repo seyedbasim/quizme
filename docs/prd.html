@@ -559,7 +559,7 @@ updated: 2026-09-06</div>
 - The credit is a <strong>hard spending cap</strong>: when it is exhausted, Azure <strong>disables the subscription's services for the rest of the billing period</strong> — Quizme goes offline until the 1st, it does not silently run up a bill. <strong>This makes FR-53 (degrade before the cap) a real requirement, not an optimisation.</strong></p>
 <p><strong>Privacy</strong>
 - AI inference runs on <strong>Azure AI Foundry / Azure AI Speech deployments in the user's own Azure tenant</strong> — not OpenAI's or Anthropic's public consumer APIs. Audio, Transcripts, Knowledge Units, and Topic Notes are stored only in the user's Azure resources.
-- <code>[ASSUMPTION: the chosen chat model (e.g. a GPT-4.1-class deployment) is available as a regional deployment in Southeast Asia. If the preferred model — e.g. Claude — is not offered there, it runs via a companion-region or data-zone deployment; still the user's Azure tenant, still not a consumer API, but inference may leave the Singapore region. Confirm at provisioning — §8 Open Q 13.]</code>
+- <strong>CONFIRMED:</strong> a top-tier chat model is deployable in Southeast Asia (Regional or DataZone) with usable quota — inference stays in the user's Azure tenant and, with a Regional deployment, in the Singapore region. <code>[ASSUMPTION: v1 uses a GPT-4.1-class **Regional** deployment as the default (best data residency); switching to Claude or a DataZone deployment is a config change.]</code>
 - <strong>One accepted exception: quiz delivery.</strong> Generated Questions, model answers, and the user's typed Answers transit Telegram's servers. This exposes the substance of individual Knowledge Units <em>as they are quizzed</em>. It does <strong>not</strong> expose raw audio, Transcripts, Sources, Topic Notes, the Review Queue, or the knowledge base as a whole.
 - The web app is reachable on the public internet but gated by <strong>App Service / Functions built-in "Easy Auth"</strong> (Entra ID) restricted to the single authorized identity (FR-46).</p>
 <p><strong>Cost</strong>
@@ -629,9 +629,9 @@ updated: 2026-09-06</div>
 <li><strong>What counts as a real Follow-up</strong> — the line between "I wonder about X" (skip) and "I need to check X" (track) needs a written rubric with examples. Hand-label ~5 recordings for ground truth (FR-40).</li>
 <li><strong>External to-do sync</strong> — should Action Items push to Apple Reminders / a calendar so they surface where the user already looks? Assumed no for v1; revisit for v1.1.</li>
 <li><strong>Consecutive-<code>partial</code> threshold</strong> — how many consecutive <code>partial</code> grades on a KU should spawn a Revisit item (FR-41)? Default assumption: 2.</li>
-<li>~~<strong>Azure region</strong>~~ — <strong>RESOLVED: Southeast Asia (Singapore).</strong> Foundry chat models are available there; Azure OpenAI Whisper is not (→ use Azure AI Speech, which is). Confirm the specific chat model's regional availability (Open Q 13).</li>
+<li>~~<strong>Azure region</strong>~~ — <strong>RESOLVED: Southeast Asia (Singapore).</strong> Foundry chat models are available there; Azure OpenAI Whisper is not (→ use Azure AI Speech, which is).</li>
 <li>~~<strong>Web auth mechanism</strong>~~ — <strong>RESOLVED: Easy Auth</strong> (App Service / Functions built-in auth, Entra ID), locked to one identity via "assignment required" + a principal check in middleware (FR-46).</li>
-<li><strong>Chat model in Southeast Asia</strong> — is the preferred top-tier model (GPT-4.1-class vs Claude) available as a <em>regional</em> deployment in Southeast Asia? If not, choose between (a) a model that is, (b) a data-zone deployment, or (c) a companion-region deployment — the last two mean inference may leave Singapore (§5.2 privacy assumption). Verify quota too — new Foundry deployments can start at quota 0 and need an increase request.</li>
+<li>~~<strong>Chat model in Southeast Asia</strong>~~ — <strong>RESOLVED: deployable</strong> (Regional/DataZone, usable quota). v1 default is a GPT-4.1-class Regional deployment; the exact deployment name goes in <code>config.toml</code> <code>[llm].default_deployment</code> at provisioning. Choosing Claude instead, or DataZone, is a config change.</li>
 <li><strong>Dev/test terms risk</strong> — the VS credit is not licensed for production. Serverless-first mitigates but does not eliminate this. Decide whether to accept the grey area for a personal app or move to pay-as-you-go (~$60–90/mo) before any real reliance.</li>
 </ol>
 <h2 id="9-assumptions-index">9. Assumptions Index</h2>
@@ -649,7 +649,7 @@ updated: 2026-09-06</div>
 <li>§5.1 — The to-do list lives inside Quizme only; no external task/calendar integration in v1.</li>
 <li>§5.2 — <strong>DECIDED (top model everywhere):</strong> a top-tier Foundry model serves every LLM stage; high-volume low-judgment stages can be downgraded per-stage in config if the budget tightens.</li>
 <li>§5.2 — All inference is via Foundry / AI Speech deployments in the user's Azure tenant; no third-party consumer model API.</li>
-<li>§5.2 — The chosen chat model is assumed available as a Southeast Asia regional deployment; if not, a data-zone / companion-region deployment is used and inference may leave Singapore (Open Q 13).</li>
+<li>§5.2 — <strong>CONFIRMED:</strong> a top-tier chat model is deployable in Southeast Asia. v1 default: GPT-4.1-class Regional deployment (inference stays in Singapore).</li>
 <li>§5.2 — Running cost must stay within the monthly credit; the system tracks spend, warns, and throttles paid work before the hard cap (FR-38, FR-53).</li>
 <li>§5.2 — Web auth is Easy Auth (Entra), locked to one identity.</li>
 <li>§5.2, §6.2 — A fully-local deployment (Ollama + local whisper + SQLite) is the documented exit for credit-lapse; the KB is exportable on demand; it is not built in v1.</li>

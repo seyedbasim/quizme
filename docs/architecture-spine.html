@@ -180,7 +180,7 @@ companions: [docs/prd.md]</div>
 <li><strong>Binds:</strong> every <code>LLM</code>, <code>Transcriber</code>, <code>Embedder</code>, and <code>Store</code> use.</li>
 <li><strong>Prevents:</strong> personal study content going to a third-party consumer model API; data spread across providers; vendor lock-in that blocks the credit-lapse exit.</li>
 <li><strong>Rule:</strong> All model calls target <strong>Azure AI Foundry / Azure AI Speech deployments in the user's own subscription</strong> (region <strong>Southeast Asia</strong>); no <code>api.openai.com</code> / <code>api.anthropic.com</code> / other consumer endpoints. All persistent data lives in the user's Azure Postgres and Blob. The only outbound traffic outside Azure is the <code>Delivery</code> adapter to Telegram (PRD §5.2), carrying generated Questions, model answers, and user Answers only — never audio, Transcripts, Sources, Topic Notes, or the KB. The op-log and export format carry no Azure-proprietary types, so AD-18's local fallback stays viable.</li>
-<li><strong>Model-region caveat:</strong> transcription is Azure AI Speech because Azure OpenAI Whisper is not in Southeast Asia. The chat model is assumed available as a <strong>Regional</strong> Southeast Asia deployment; if the preferred model is not (PRD Open Q 13), fall back to a <strong>DataZone</strong> deployment (keeps data in the geo) or a companion-region <strong>Regional</strong> deployment — either can send inference outside Singapore. Do <strong>not</strong> use a <strong>Global</strong> deployment for the pipeline (routes anywhere, breaks the residency intent). Pick the deployment type explicitly per model.</li>
+<li><strong>Model-region facts:</strong> transcription is Azure AI Speech because Azure OpenAI Whisper is not in Southeast Asia. A top-tier chat model <strong>is</strong> deployable in Southeast Asia (confirmed) — v1 uses a <strong>Regional</strong> deployment there (inference stays in Singapore). If a later model choice needs a <strong>DataZone</strong> deployment, that keeps data in the geo; never use a <strong>Global</strong> deployment for the pipeline (routes anywhere, breaks residency). Pick the deployment type explicitly per model.</li>
 </ul>
 <h3 id="ad-14-withdrawn">AD-14 — <em>(withdrawn)</em></h3>
 <p>Previously: "STT and LLM inference are never co-resident" — a memory-budget rule for the 16 GB local-Mac deployment. Obsolete on Azure, where transcription and LLM calls are separate managed endpoints with no shared memory. The <code>resource_class</code> tag is dropped. <strong>ID retained, not reused.</strong></p>
@@ -359,7 +359,7 @@ companions: [docs/prd.md]</div>
 </table>
 <h2 id="stack">Stack</h2>
 <p><em>Seed — verified current as of 2026-09-06; the code owns exact pins once it exists. Rationale in the conversation, not here.</em></p>
-<p><em>Seed — verified plausible as of 2026-09-06; confirm exact SKUs, model availability, and prices in </em><em>Southeast Asia</em><em> at provisioning (PRD Open Q 13). Rough all-in: ~$55–100/mo (PRD §5.2).</em></p>
+<p><em>Seed — verified plausible as of 2026-09-06; confirm exact SKUs and prices in </em><em>Southeast Asia</em><em> at provisioning. Top-tier chat model confirmed deployable there. Rough all-in: ~$55–100/mo (PRD §5.2).</em></p>
 <table>
 <thead>
 <tr>
@@ -402,7 +402,7 @@ companions: [docs/prd.md]</div>
 </tr>
 <tr>
 <td><strong>Azure AI Foundry — chat deployment</strong></td>
-<td>one top-tier deployment as default <code>[llm].deployment</code> (GPT-4.1-class confirmed in Southeast Asia; Claude may need DataZone/companion region — Open Q 13). <strong>Regional</strong> or <strong>DataZone</strong> deployment type, never Global (AD-13). Per-stage overrides in config (AD-8).</td>
+<td>one top-tier deployment as default <code>[llm].default_deployment</code> — a GPT-4.1-class <strong>Regional</strong> deployment in Southeast Asia (confirmed deployable). Never Global (AD-13). Per-stage overrides in config (AD-8).</td>
 </tr>
 <tr>
 <td><strong>Azure AI Speech</strong></td>

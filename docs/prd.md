@@ -668,7 +668,7 @@ The web app shows the retention view (FR-32) and exposes the user-configurable s
 
 **Privacy**
 - AI inference runs on **Azure AI Foundry / Azure AI Speech deployments in the user's own Azure tenant** — not OpenAI's or Anthropic's public consumer APIs. Audio, Transcripts, Knowledge Units, and Topic Notes are stored only in the user's Azure resources.
-- `[ASSUMPTION: the chosen chat model (e.g. a GPT-4.1-class deployment) is available as a regional deployment in Southeast Asia. If the preferred model — e.g. Claude — is not offered there, it runs via a companion-region or data-zone deployment; still the user's Azure tenant, still not a consumer API, but inference may leave the Singapore region. Confirm at provisioning — §8 Open Q 13.]`
+- **CONFIRMED:** a top-tier chat model is deployable in Southeast Asia (Regional or DataZone) with usable quota — inference stays in the user's Azure tenant and, with a Regional deployment, in the Singapore region. `[ASSUMPTION: v1 uses a GPT-4.1-class **Regional** deployment as the default (best data residency); switching to Claude or a DataZone deployment is a config change.]`
 - **One accepted exception: quiz delivery.** Generated Questions, model answers, and the user's typed Answers transit Telegram's servers. This exposes the substance of individual Knowledge Units *as they are quizzed*. It does **not** expose raw audio, Transcripts, Sources, Topic Notes, the Review Queue, or the knowledge base as a whole.
 - The web app is reachable on the public internet but gated by **App Service / Functions built-in "Easy Auth"** (Entra ID) restricted to the single authorized identity (FR-46).
 
@@ -746,9 +746,9 @@ The web app shows the retention view (FR-32) and exposes the user-configurable s
 8. **What counts as a real Follow-up** — the line between "I wonder about X" (skip) and "I need to check X" (track) needs a written rubric with examples. Hand-label ~5 recordings for ground truth (FR-40).
 9. **External to-do sync** — should Action Items push to Apple Reminders / a calendar so they surface where the user already looks? Assumed no for v1; revisit for v1.1.
 10. **Consecutive-`partial` threshold** — how many consecutive `partial` grades on a KU should spawn a Revisit item (FR-41)? Default assumption: 2.
-11. ~~**Azure region**~~ — **RESOLVED: Southeast Asia (Singapore).** Foundry chat models are available there; Azure OpenAI Whisper is not (→ use Azure AI Speech, which is). Confirm the specific chat model's regional availability (Open Q 13).
+11. ~~**Azure region**~~ — **RESOLVED: Southeast Asia (Singapore).** Foundry chat models are available there; Azure OpenAI Whisper is not (→ use Azure AI Speech, which is).
 12. ~~**Web auth mechanism**~~ — **RESOLVED: Easy Auth** (App Service / Functions built-in auth, Entra ID), locked to one identity via "assignment required" + a principal check in middleware (FR-46).
-13. **Chat model in Southeast Asia** — is the preferred top-tier model (GPT-4.1-class vs Claude) available as a *regional* deployment in Southeast Asia? If not, choose between (a) a model that is, (b) a data-zone deployment, or (c) a companion-region deployment — the last two mean inference may leave Singapore (§5.2 privacy assumption). Verify quota too — new Foundry deployments can start at quota 0 and need an increase request.
+13. ~~**Chat model in Southeast Asia**~~ — **RESOLVED: deployable** (Regional/DataZone, usable quota). v1 default is a GPT-4.1-class Regional deployment; the exact deployment name goes in `config.toml` `[llm].default_deployment` at provisioning. Choosing Claude instead, or DataZone, is a config change.
 14. **Dev/test terms risk** — the VS credit is not licensed for production. Serverless-first mitigates but does not eliminate this. Decide whether to accept the grey area for a personal app or move to pay-as-you-go (~$60–90/mo) before any real reliance.
 
 ## 9. Assumptions Index
@@ -766,7 +766,7 @@ The web app shows the retention view (FR-32) and exposes the user-configurable s
 - §5.1 — The to-do list lives inside Quizme only; no external task/calendar integration in v1.
 - §5.2 — **DECIDED (top model everywhere):** a top-tier Foundry model serves every LLM stage; high-volume low-judgment stages can be downgraded per-stage in config if the budget tightens.
 - §5.2 — All inference is via Foundry / AI Speech deployments in the user's Azure tenant; no third-party consumer model API.
-- §5.2 — The chosen chat model is assumed available as a Southeast Asia regional deployment; if not, a data-zone / companion-region deployment is used and inference may leave Singapore (Open Q 13).
+- §5.2 — **CONFIRMED:** a top-tier chat model is deployable in Southeast Asia. v1 default: GPT-4.1-class Regional deployment (inference stays in Singapore).
 - §5.2 — Running cost must stay within the monthly credit; the system tracks spend, warns, and throttles paid work before the hard cap (FR-38, FR-53).
 - §5.2 — Web auth is Easy Auth (Entra), locked to one identity.
 - §5.2, §6.2 — A fully-local deployment (Ollama + local whisper + SQLite) is the documented exit for credit-lapse; the KB is exportable on demand; it is not built in v1.

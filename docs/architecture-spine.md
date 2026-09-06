@@ -89,7 +89,7 @@ Directory ↔ layer mapping is in **Structural Seed**.
 - **Binds:** every `LLM`, `Transcriber`, `Embedder`, and `Store` use.
 - **Prevents:** personal study content going to a third-party consumer model API; data spread across providers; vendor lock-in that blocks the credit-lapse exit.
 - **Rule:** All model calls target **Azure AI Foundry / Azure AI Speech deployments in the user's own subscription** (region **Southeast Asia**); no `api.openai.com` / `api.anthropic.com` / other consumer endpoints. All persistent data lives in the user's Azure Postgres and Blob. The only outbound traffic outside Azure is the `Delivery` adapter to Telegram (PRD §5.2), carrying generated Questions, model answers, and user Answers only — never audio, Transcripts, Sources, Topic Notes, or the KB. The op-log and export format carry no Azure-proprietary types, so AD-18's local fallback stays viable.
-- **Model-region caveat:** transcription is Azure AI Speech because Azure OpenAI Whisper is not in Southeast Asia. The chat model is assumed available as a **Regional** Southeast Asia deployment; if the preferred model is not (PRD Open Q 13), fall back to a **DataZone** deployment (keeps data in the geo) or a companion-region **Regional** deployment — either can send inference outside Singapore. Do **not** use a **Global** deployment for the pipeline (routes anywhere, breaks the residency intent). Pick the deployment type explicitly per model.
+- **Model-region facts:** transcription is Azure AI Speech because Azure OpenAI Whisper is not in Southeast Asia. A top-tier chat model **is** deployable in Southeast Asia (confirmed) — v1 uses a **Regional** deployment there (inference stays in Singapore). If a later model choice needs a **DataZone** deployment, that keeps data in the geo; never use a **Global** deployment for the pipeline (routes anywhere, breaks residency). Pick the deployment type explicitly per model.
 
 ### AD-14 — *(withdrawn)*
 
@@ -227,7 +227,7 @@ graph TD
 
 *Seed — verified current as of 2026-09-06; the code owns exact pins once it exists. Rationale in the conversation, not here.*
 
-*Seed — verified plausible as of 2026-09-06; confirm exact SKUs, model availability, and prices in **Southeast Asia** at provisioning (PRD Open Q 13). Rough all-in: ~$55–100/mo (PRD §5.2).*
+*Seed — verified plausible as of 2026-09-06; confirm exact SKUs and prices in **Southeast Asia** at provisioning. Top-tier chat model confirmed deployable there. Rough all-in: ~$55–100/mo (PRD §5.2).*
 
 | Name | Version / SKU / notes |
 | --- | --- |
@@ -239,7 +239,7 @@ graph TD
 | **Azure Database for PostgreSQL Flexible Server** | **Burstable B1ms** + ~32 GB storage + 7-day backups; `pgvector` enabled. The one always-billing component, ~$15–20/mo. |
 | **Azure Blob Storage** | Standard, LRS, Hot; audio + transcripts; lifecycle rule to Cool after N days (PRD Open Q 7). <$2/mo. |
 | **Azure Storage Queue** | one queue `ingest`, one dead-letter; upload → pipeline trigger (AD-16). |
-| **Azure AI Foundry — chat deployment** | one top-tier deployment as default `[llm].deployment` (GPT-4.1-class confirmed in Southeast Asia; Claude may need DataZone/companion region — Open Q 13). **Regional** or **DataZone** deployment type, never Global (AD-13). Per-stage overrides in config (AD-8). |
+| **Azure AI Foundry — chat deployment** | one top-tier deployment as default `[llm].default_deployment` — a GPT-4.1-class **Regional** deployment in Southeast Asia (confirmed deployable). Never Global (AD-13). Per-stage overrides in config (AD-8). |
 | **Azure AI Speech** | batch / fast transcription with the Whisper model; word + segment timestamps; available in Southeast Asia. Duration-billed (~$0.30–1.00/audio-hour by tier). Replaces the (region-unavailable) Azure OpenAI Whisper deployment. |
 | **Azure AI Foundry — embeddings deployment** | a text-embedding model; dimension pinned in config. (Local model is the AD-18 fallback.) |
 | **Azure Key Vault** | Telegram token + webhook secret, DB creds (prefer Entra auth to Postgres so there is no password), any keys; via **Managed Identity** (AD-17). |
