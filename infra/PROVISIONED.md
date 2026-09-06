@@ -4,6 +4,14 @@ Subscription `Basim-MCTv2` (`c136ba5f-36d9-490d-92c1-01475f282cd3`), tenant
 `45af99f3-…`, resource group **`rg-quizme`**, region **`southeastasia`**.
 Suffix `96616d`. Provisioned 2026-09-06.
 
+**Status: DEPLOYED and live** (2026-09-07). `func-quizme-96616d.azurewebsites.net`
+serves the web app (Easy Auth) + `/telegram/webhook`; `daily_quiz` timer and
+`ingest_worker` queue trigger registered. Migrations `0001`+`0002` applied. Telegram
+webhook set, chat id `7432349917` locked via KV secret `telegram-allowed-chat-id`.
+Verified end-to-end: HTTP app, Managed Identity → Postgres/Blob/Queue/Foundry/KV,
+Telegram outbound, queue worker (`build_deps` + pipeline `execute` + poison-queue
+dead-lettering).
+
 | Resource | Name | Notes |
 | --- | --- | --- |
 | Storage account | `stquizme96616d` | Standard LRS. Containers `recordings`, `transcripts`. Queues `ingest`, `ingest-poison`. |
@@ -13,7 +21,7 @@ Suffix `96616d`. Provisioned 2026-09-06.
 | Key Vault | `kv-quizme-96616d` | RBAC auth. Secrets: `database-url`, `pg-admin-password`, `aoai-api-key`, `speech-api-key`, `web-allowed-principal`, `telegram-bot-token`, `telegram-webhook-secret`, `easyauth-client-secret`. |
 | Log Analytics | `log-quizme-96616d` | — |
 | Application Insights | `appi-quizme-96616d` | workspace-based, linked to the Function App |
-| **Function App** | `func-quizme-96616d` | **Flex Consumption**, Linux, Python 3.12, `httpsOnly`. Host `func-quizme-96616d.azurewebsites.net`. `host.json` `routePrefix=""` (serves at root). System-assigned MI `c800203f-…`. **No code deployed yet.** |
+| **Function App** | `func-quizme-96616d` | **Flex Consumption**, Linux, Python 3.12, `httpsOnly`. `func-quizme-96616d.azurewebsites.net`. `host.json` `routePrefix=""`. System MI `c800203f-…`. **Deployed** — functions: `http_app_func`, `daily_quiz`, `ingest_worker`. |
 | Entra app (Easy Auth) | `Quizme` — appId `2692dde1-b3b2-4558-aa37-93f44131a454`, SP `eec59ee5-…` | Single-tenant. **Assignment required = true**; only my user assigned. |
 
 ## Function App configuration
@@ -63,24 +71,22 @@ add a deployment and update `config.toml` `[llm]`.
 > RBAC on Cognitive Services can take 5–15 min to propagate; API-key auth works
 > immediately (`localAuth` not disabled) and is the local-dev path.
 
-## Still to do
+## Done
 
-- [x] ~~Telegram bot~~ — created; token + webhook secret in KV.
-- [x] ~~Function App + App Insights~~ — done.
-- [x] ~~Managed Identity RBAC~~ — 5 roles granted.
-- [x] ~~Easy Auth~~ — v2, require-auth, assignment-required, single user.
-- [ ] **`TELEGRAM_ALLOWED_CHAT_ID`** — message `@basimquizme_bot`, then
-      `curl https://api.telegram.org/bot<token>/getUpdates` to read the chat id;
-      set it as a Function App app setting.
-- [ ] **Implement the adapters + `functions/function_app.py::_build_deps()`** (code, not infra).
-- [ ] **Deploy** — `cd functions && func azure functionapp publish func-quizme-96616d`,
-      or push to `main` (GitHub Actions `deploy.yml` — needs repo secrets
-      `AZURE_CREDENTIALS`, `AZURE_FUNCTIONAPP_NAME`, `DATABASE_URL`).
-- [ ] **Set the webhook** once deployed:
-      `curl "https://api.telegram.org/bot<token>/setWebhook" -d url=https://func-quizme-96616d.azurewebsites.net/telegram/webhook -d secret_token=<webhook-secret>`
-- [ ] **Postgres Entra auth** (optional hardening) — currently password auth via
-      the `database-url` KV secret. Move the MI to an Entra DB role later.
+- [x] Telegram bot + secrets in KV
+- [x] Function App + App Insights + MI RBAC + Easy Auth
+- [x] `TELEGRAM_ALLOWED_CHAT_ID` (KV secret `telegram-allowed-chat-id` = 7432349917)
+- [x] All adapters + pipeline + quiz + web implemented and deployed
+- [x] `setWebhook` → `https://func-quizme-96616d.azurewebsites.net/telegram/webhook`
+- [x] Migrations `0001`, `0002` applied to the live DB
+
+## Follow-ups (not blocking)
+
+- [ ] Move Postgres auth to Entra (MI DB role) instead of the KV password.
 - [ ] Blob lifecycle → Cool tier (PRD Open Q 7).
+- [ ] Infrastructure-as-code (Bicep) for the estate.
+- [ ] Request a DataZone/top-tier Foundry quota to replace `gpt-5-mini` (PRD §5.2).
+- [ ] A few orphan `stage_run` rows from a synthetic worker test — harmless.
 
 ## Local dev
 
