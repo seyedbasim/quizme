@@ -4,32 +4,47 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths-ignore: ["docs/**", "*.md"]
+    paths:
+      - "quizme/**"
+      - "function_app.py"
+      - "host.json"
+      - "requirements.txt"
+      - ".funcignore"
 
-# Deploys the Azure Function App (Southeast Asia). Repo secrets required:
-#   AZURE_CREDENTIALS       - service principal JSON (az ad sp create-for-rbac --sdk-auth)
-#   AZURE_FUNCTIONAPP_NAME  - func-quizme-96616d
-#   DATABASE_URL            - the same value as the KV `database-url` secret
+# Repo secret required:
+#   AZURE_CREDENTIALS  - `az ad sp create-for-rbac --sdk-auth` JSON for SP quizme-deploy
+#     (Contributor + Website Contributor on rg-quizme, KV Secrets User on the vault,
+#      Contributor on the Postgres server for the temp firewall rule).
+# The DB URL is fetched from Key Vault at deploy time — never a GitHub secret.
 concurrency: deploy
+env:
+  RG: rg-quizme
+  KV: kv-quizme-96616d
+  APP: func-quizme-96616d
+  PG: psql-quizme-96616d
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-
-      - name: Run migrations (forward-only, AD-17)
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          uv sync --extra dev
-          uv run alembic upgrade head
-
       - uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Migrations (temp-open the DB firewall for this runner)
+        run: |
+          set -euo pipefail
+          IP=$(curl -s https://api.ipify.org)
+          RULE="ghdeploy-${GITHUB_RUN_ID}"
+          trap 'az postgres flexible-server firewall-rule delete -g "$RG" --name "$PG" --rule-name "$RULE" --yes || true' EXIT
+          az postgres flexible-server firewall-rule create -g "$RG" --name "$PG" \
+            --rule-name "$RULE" --start-ip-address "$IP" --end-ip-address "$IP"
+          DB=$(az keyvault secret show --vault-name "$KV" -n database-url --query value -o tsv)
+          uv sync --extra dev
+          DATABASE_URL="$DB" uv run alembic upgrade head
+
       - name: Publish Functions
         run: |
           npm i -g azure-functions-core-tools@4
-          func azure functionapp publish ${{ secrets.AZURE_FUNCTIONAPP_NAME }} --python
+          func azure functionapp publish "$APP" --python
