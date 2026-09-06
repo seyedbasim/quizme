@@ -37,9 +37,9 @@ jobs:
           set -euo pipefail
           IP=$(curl -s https://api.ipify.org)
           RULE="ghdeploy-${GITHUB_RUN_ID}"
-          trap 'az postgres flexible-server firewall-rule delete -g "$RG" --name "$PG" --rule-name "$RULE" --yes || true' EXIT
-          az postgres flexible-server firewall-rule create -g "$RG" --name "$PG" \
-            --rule-name "$RULE" --start-ip-address "$IP" --end-ip-address "$IP"
+          trap 'az postgres flexible-server firewall-rule delete -g "$RG" --server-name "$PG" --name "$RULE" --yes || true' EXIT
+          az postgres flexible-server firewall-rule create -g "$RG" --server-name "$PG" \
+            --name "$RULE" --start-ip-address "$IP" --end-ip-address "$IP"
           DB=$(az keyvault secret show --vault-name "$KV" -n database-url --query value -o tsv)
           uv sync --extra dev
           DATABASE_URL="$DB" uv run alembic upgrade head
