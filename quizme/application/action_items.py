@@ -13,6 +13,7 @@ and wires the loop-closing signals (AD-12):
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from quizme.application.deps import Deps
 from quizme.domain.action_items import Origin, revisit_key, upsert
@@ -44,5 +45,5 @@ def maybe_auto_resolve_revisit(deps: Deps, *, ku_id: str, consecutive_correct: i
     )
 
 
-def list_items(deps: Deps, *, status: str | None = None, origin: str | None = None) -> list[dict]:
+def list_items(deps: Deps, *, status: str | None = None, origin: str | None = None) -> list[dict[str, Any]]:
     raise NotImplementedError("list_items: grouped by Topic, overdue/snoozed-due highlighted (FR-43)")

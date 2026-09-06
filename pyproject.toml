@@ -84,7 +84,16 @@ ignore = ["UP042"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-# Adapters wrap untyped SDKs; keep the core strict, relax the edges.
+
+# Adapters wrap untyped vendor SDKs and dynamically-shaped DB rows; keep the
+# domain + application core strict, relax the I/O edges.
 [[tool.mypy.overrides]]
-module = "quizme.adapters.*"
+module = ["quizme.adapters.*", "quizme.web.*", "quizme.migrations.*"]
 disallow_untyped_calls = false
+disallow_untyped_defs = false
+disallow_any_generics = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["pgvector.*", "azure.*", "openai.*"]
+ignore_missing_imports = true

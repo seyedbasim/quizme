@@ -185,13 +185,14 @@ def _richer(a: str, b: str) -> str:
 
 
 def _ku_dict(ku: KnowledgeUnit) -> dict[str, Any]:
+    """KU as a JSON-serialisable payload — timestamps as ISO-8601 strings."""
     return {
         "id": ku.id,
         "canonical": ku.canonical,
         "topic_ids": list(ku.topic_ids),
         "sources": [{"recording_id": s.recording_id, "start": s.start, "end": s.end} for s in ku.sources],
         "alt_phrasings": list(ku.alt_phrasings),
-        "created_at": ku.created_at,
-        "updated_at": ku.updated_at,
+        "created_at": ku.created_at.isoformat(),
+        "updated_at": ku.updated_at.isoformat(),
         "status": ku.status.value,
     }

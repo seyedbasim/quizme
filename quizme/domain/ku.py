@@ -116,6 +116,12 @@ class KUOperation:
 # --------------------------------------------------------------------------- fold
 
 
+def _dt(v: datetime | str) -> datetime:
+    """Payload timestamps are stored as ISO-8601 strings (Consistency
+    Conventions); accept a ``datetime`` too so in-memory tests can pass one."""
+    return v if isinstance(v, datetime) else datetime.fromisoformat(v)
+
+
 def _ku_from_payload(d: Mapping[str, Any]) -> KnowledgeUnit:
     return KnowledgeUnit(
         id=d["id"],
@@ -123,8 +129,8 @@ def _ku_from_payload(d: Mapping[str, Any]) -> KnowledgeUnit:
         topic_ids=tuple(d.get("topic_ids", ())),
         sources=tuple(SourceRef(**s) for s in d.get("sources", ())),
         alt_phrasings=tuple(d.get("alt_phrasings", ())),
-        created_at=d["created_at"],
-        updated_at=d["updated_at"],
+        created_at=_dt(d["created_at"]),
+        updated_at=_dt(d["updated_at"]),
         status=KUStatus(d.get("status", KUStatus.ACTIVE)),
         superseded_by=d.get("superseded_by"),
     )

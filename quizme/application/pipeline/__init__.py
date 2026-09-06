@@ -13,6 +13,7 @@ the only way to force reprocessing (AD-4). ``deps`` is the composed
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -21,4 +22,4 @@ class StageResult:
     recording_id: str
     ok: bool
     skipped: bool = False  # idempotency no-op
-    detail: dict = field(default_factory=dict)
+    detail: dict[str, Any] = field(default_factory=dict)

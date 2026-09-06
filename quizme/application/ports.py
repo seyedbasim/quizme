@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from quizme.domain.action_items import ActionItem
 from quizme.domain.ku import KnowledgeUnit, KUOperation
@@ -58,13 +58,13 @@ class LLM(Protocol):
         prompt_version: str,
         system: str,
         user: str,
-        schema: dict,
+        schema: dict[str, Any],
         temperature: float = 0.0,
     ) -> LLMResult: ...
 
 
 class LLMResult(Protocol):
-    data: dict
+    data: dict[str, Any]
     model: str
     input_tokens: int
     output_tokens: int
@@ -124,10 +124,10 @@ class Store(Protocol):
     def upsert_action_item(self, item: ActionItem) -> None: ...
 
     # -- review queue (FR-21) --
-    def add_review_item(self, *, kind: str, ku_ids: Sequence[str], context: dict) -> None: ...
+    def add_review_item(self, *, kind: str, ku_ids: Sequence[str], context: dict[str, Any]) -> None: ...
 
     # -- spend (FR-38) --
-    def record_llm_call(self, row: dict) -> None: ...
+    def record_llm_call(self, row: dict[str, Any]) -> None: ...
     def month_spend_usd(self, *, year: int, month: int) -> float: ...
 
 

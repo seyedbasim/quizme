@@ -8,6 +8,8 @@ KUOperation (or grade correction) — AD-3 — and never row-deletes a KU (tombs
 
 from __future__ import annotations
 
+from typing import Any
+
 from quizme.application.deps import Deps
 
 ITEM_KINDS = (
@@ -20,11 +22,11 @@ ITEM_KINDS = (
 )
 
 
-def list_open(deps: Deps) -> list[dict]:
+def list_open(deps: Deps) -> list[dict[str, Any]]:
     raise NotImplementedError("list_open: return open review items with inline context (FR-21)")
 
 
-def resolve(deps: Deps, *, item_id: str, resolution: str, payload: dict) -> None:
+def resolve(deps: Deps, *, item_id: str, resolution: str, payload: dict[str, Any]) -> None:
     raise NotImplementedError(
         "resolve: dispatch on item.kind; for 'contradiction' -> user picks keep-A / keep-B / "
         "edited-merge -> append a user-actor KUOperation (merge/archive/edit); "
