@@ -58,6 +58,57 @@ class PostgresStore:
     def dispose(self) -> None:
         self._engine.dispose()
 
+    # -- recordings / transcripts (AD-1) -----------------------------------
+
+    def recording_by_hash(self, sha256: str) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.recording).where(s.recording.c.sha256 == sha256)).mappings().first()
+            return dict(r) if r else None
+
+    def add_recording(
+        self, *, recording_id: str, upload_id: str, sha256: str, blob_key: str, filename: str, size: int
+    ) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(
+                insert(s.recording).values(
+                    id=recording_id,
+                    upload_id=upload_id,
+                    sha256=sha256,
+                    blob_key=blob_key,
+                    filename=filename,
+                    bytes=size,
+                    created_at=datetime.now(UTC),
+                )
+            )
+
+    def get_recording(self, recording_id: str) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.recording).where(s.recording.c.id == recording_id)).mappings().first()
+            return dict(r) if r else None
+
+    def add_transcript(self, *, transcript_id: str, recording_id: str, blob_key: str, full_text: str) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(
+                insert(s.transcript).values(
+                    id=transcript_id,
+                    recording_id=recording_id,
+                    blob_key=blob_key,
+                    full_text=full_text,
+                    created_at=datetime.now(UTC),
+                )
+            )
+
+    def add_segments(self, rows: Sequence[dict[str, Any]]) -> None:
+        if rows:
+            with self._engine.begin() as conn:
+                conn.execute(insert(s.segment), list(rows))
+
+    # -- run history (FR-37) ---------------------------------------------
+
+    def record_stage_run(self, row: dict[str, Any]) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(insert(s.stage_run).values(id=new_id(), **row))
+
     # -- operation log / KB projection (AD-3) ---------------------------------
 
     def append_ops(self, ops: Sequence[KUOperation]) -> None:

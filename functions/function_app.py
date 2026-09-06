@@ -23,12 +23,10 @@ log = logging.getLogger("quizme.functions")
 
 
 def _build_deps():  # -> quizme.application.deps.Deps
-    """Compose adapters from env / Key Vault. See quizme.adapters.*."""
-    raise NotImplementedError(
-        "construct Config (application.config.load), DefaultAzureCredential, "
-        "PostgresStore, FoundryLLM, AzureSpeechTranscriber, FoundryEmbedder, "
-        "AzureRecordingIntake, TelegramDelivery, SpendMeterImpl -> Deps"
-    )
+    """Compose adapters from app settings / Key Vault references."""
+    from quizme.composition import build_deps  # noqa: PLC0415
+
+    return build_deps()
 
 
 # --- HTTP: the FastAPI app --------------------------------------------------
