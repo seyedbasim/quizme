@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quizme — Product Requirements</title>
+<style>
+  :root {
+    --bg: #fbfbfa; --fg: #1f2328; --muted: #6a737d; --border: #e3e3e0;
+    --card: #ffffff; --accent: #3b5bdb; --code-bg: #f4f4f2; --shadow: rgba(0,0,0,.05);
+    --th-bg: #f4f4f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16171a; --fg: #e6e6e3; --muted: #9aa0a6; --border: #2c2e33;
+      --card: #1e1f23; --accent: #91a7ff; --code-bg: #24262b; --shadow: rgba(0,0,0,.3);
+      --th-bg: #24262b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 0; max-width: 1240px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 20px 60px; border-right: 1px solid var(--border); font-size: 13.5px;
+  }
+  nav.toc .doc-switch {
+    display: inline-block; margin-bottom: 16px; padding: 5px 10px; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 12.5px;
+  }
+  nav.toc .doc-switch:hover { background: var(--card); }
+  nav.toc ul { list-style: none; padding-left: 0; margin: 0; }
+  nav.toc li { margin: 1px 0; }
+  nav.toc a { color: var(--muted); text-decoration: none; display: block; padding: 3px 8px; border-radius: 5px; }
+  nav.toc a:hover { color: var(--fg); background: var(--card); }
+  nav.toc .toc-h3 { padding-left: 20px; font-size: 12.5px; }
+  nav.toc .toc-h4 { padding-left: 34px; font-size: 12px; opacity: .8; }
+  main { padding: 40px 52px 120px; min-width: 0; }
+  main > h1:first-child { margin-top: 0; }
+  h1, h2, h3, h4 { line-height: 1.28; font-weight: 680; scroll-margin-top: 20px; }
+  h1 { font-size: 2rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.42rem; margin-top: 2.4em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.13rem; margin-top: 1.8em; }
+  h4 { font-size: 1rem; margin-top: 1.5em; color: var(--fg); }
+  h4 code { font-size: .95em; }
+  a { color: var(--accent); }
+  p, li { overflow-wrap: anywhere; }
+  code {
+    background: var(--code-bg); padding: .12em .38em; border-radius: 4px;
+    font: .87em/1.5 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  pre {
+    background: var(--code-bg); padding: 16px 18px; border-radius: 8px; overflow-x: auto;
+    border: 1px solid var(--border); font-size: 13px;
+  }
+  pre code { background: none; padding: 0; }
+  pre.mermaid { background: var(--card); text-align: center; line-height: 1.4; }
+  table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 14px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 11px; text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 640; }
+  blockquote {
+    margin: 1.2em 0; padding: .4em 1.1em; border-left: 3px solid var(--accent);
+    background: var(--card); color: var(--muted); border-radius: 0 6px 6px 0;
+  }
+  blockquote p { margin: .4em 0; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.4em 0; }
+  .frontmatter {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin: 0 0 28px; font-size: 12.5px; color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-x: auto;
+  }
+  .tag { display:inline-block; background: var(--code-bg); border:1px solid var(--border); border-radius:4px;
+          padding:0 5px; font-size:.8em; color: var(--muted); }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 28px 22px 80px; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    .wrap { display: block; }
+    main { padding: 0; }
+    pre, table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <a class="doc-switch" href="architecture-spine.html">&rarr; Architecture Spine</a>
+  <ul><li><a class="" href="#prd-quizme">PRD: Quizme</a><ul><li><a class="" href="#0-document-purpose">0. Document Purpose</a></li><li><a class="" href="#1-vision">1. Vision</a></li><li><a class="" href="#2-target-user">2. Target User</a><ul><li><a class="toc-h3" href="#21-jobs-to-be-done">2.1 Jobs To Be Done</a></li><li><a class="toc-h3" href="#22-non-users-v1">2.2 Non-Users (v1)</a></li><li><a class="toc-h3" href="#23-key-user-journeys">2.3 Key User Journeys</a></li></ul></li><li><a class="" href="#3-glossary">3. Glossary</a></li><li><a class="" href="#4-features">4. Features</a><ul><li><a class="toc-h3" href="#41-audio-ingestion-transcription">4.1 Audio Ingestion &amp;amp; Transcription</a><ul><li><a class="toc-h4" href="#fr-1-accept-an-uploaded-recording-exactly-once">FR-1: Accept an uploaded recording exactly once</a></li><li><a class="toc-h4" href="#fr-2-preserve-the-original-immutably">FR-2: Preserve the original immutably</a></li><li><a class="toc-h4" href="#fr-3-transcribe-with-timestamps">FR-3: Transcribe with timestamps</a></li><li><a class="toc-h4" href="#fr-4-report-ingestion-outcome">FR-4: Report ingestion outcome</a></li></ul></li><li><a class="toc-h3" href="#42-relevance-filtering-segmentation">4.2 Relevance Filtering &amp;amp; Segmentation</a><ul><li><a class="toc-h4" href="#fr-5-classify-transcript-segments">FR-5: Classify transcript segments</a></li><li><a class="toc-h4" href="#fr-6-retain-full-context-for-audit">FR-6: Retain full context for audit</a></li><li><a class="toc-h4" href="#fr-7-low-confidence-handling">FR-7: Low-confidence handling</a></li></ul></li><li><a class="toc-h3" href="#43-knowledge-extraction">4.3 Knowledge Extraction</a><ul><li><a class="toc-h4" href="#fr-8-extract-atomic-units">FR-8: Extract atomic units</a></li><li><a class="toc-h4" href="#fr-9-capture-alternate-phrasings">FR-9: Capture alternate phrasings</a></li><li><a class="toc-h4" href="#fr-10-flag-uncertain-extractions">FR-10: Flag uncertain extractions</a></li></ul></li><li><a class="toc-h3" href="#44-consolidation-engine">4.4 Consolidation Engine</a><ul><li><a class="toc-h4" href="#fr-11-semantic-candidate-retrieval">FR-11: Semantic candidate retrieval</a></li><li><a class="toc-h4" href="#fr-12-adjudicate-each-candidate">FR-12: Adjudicate each candidate</a></li><li><a class="toc-h4" href="#fr-13-merge-duplicates-without-losing-provenance">FR-13: Merge duplicates without losing provenance</a></li><li><a class="toc-h4" href="#fr-14-absorb-elaborations">FR-14: Absorb elaborations</a></li><li><a class="toc-h4" href="#fr-15-flag-contradictions-never-auto-resolve">FR-15: Flag contradictions, never auto-resolve</a></li><li><a class="toc-h4" href="#fr-16-periodic-per-topic-reorganization">FR-16: Periodic per-Topic reorganization</a></li></ul></li><li><a class="toc-h3" href="#45-knowledge-base-topic-notes">4.5 Knowledge Base &amp;amp; Topic Notes</a><ul><li><a class="toc-h4" href="#fr-17-knowledge-base-as-a-projection">FR-17: Knowledge base as a projection</a></li><li><a class="toc-h4" href="#fr-18-regenerate-topic-notes">FR-18: Regenerate Topic Notes</a></li><li><a class="toc-h4" href="#fr-19-browse-and-search">FR-19: Browse and search</a></li><li><a class="toc-h4" href="#fr-20-full-rebuild">FR-20: Full rebuild</a></li></ul></li><li><a class="toc-h3" href="#46-review-queue">4.6 Review Queue</a><ul><li><a class="toc-h4" href="#fr-21-unified-queue">FR-21: Unified queue</a></li><li><a class="toc-h4" href="#fr-22-resolve-with-attribution">FR-22: Resolve with attribution</a></li><li><a class="toc-h4" href="#fr-23-queue-does-not-block-ingestion">FR-23: Queue does not block ingestion</a></li></ul></li><li><a class="toc-h3" href="#47-daily-quiz-scheduling-generation">4.7 Daily Quiz — Scheduling &amp;amp; Generation</a><ul><li><a class="toc-h4" href="#fr-24-spaced-repetition-scheduling">FR-24: Spaced-repetition scheduling</a></li><li><a class="toc-h4" href="#fr-25-generate-questions-from-kus">FR-25: Generate questions from KUs</a></li><li><a class="toc-h4" href="#fr-26-deliver-one-question-at-a-time">FR-26: Deliver one question at a time</a></li><li><a class="toc-h4" href="#fr-27-notify-when-the-quiz-is-ready">FR-27: Notify when the quiz is ready</a></li><li><a class="toc-h4" href="#fr-28-configurable-cadence-and-volume">FR-28: Configurable cadence and volume</a></li></ul></li><li><a class="toc-h3" href="#48-answer-grading-retention-tracking">4.8 Answer Grading &amp;amp; Retention Tracking</a><ul><li><a class="toc-h4" href="#fr-29-semantic-grading">FR-29: Semantic grading</a></li><li><a class="toc-h4" href="#fr-30-update-the-schedule">FR-30: Update the schedule</a></li><li><a class="toc-h4" href="#fr-31-dispute-a-grade">FR-31: Dispute a grade</a></li><li><a class="toc-h4" href="#fr-32-retention-view">FR-32: Retention view</a></li></ul></li><li><a class="toc-h3" href="#49-corrections-manual-edits">4.9 Corrections &amp;amp; Manual Edits</a><ul><li><a class="toc-h4" href="#fr-33-edit-a-ku">FR-33: Edit a KU</a></li><li><a class="toc-h4" href="#fr-34-manual-merge-split-archive">FR-34: Manual merge / split / archive</a></li><li><a class="toc-h4" href="#fr-35-correct-a-source">FR-35: Correct a Source</a></li></ul></li><li><a class="toc-h3" href="#410-operability">4.10 Operability</a><ul><li><a class="toc-h4" href="#fr-36-unattended-operation">FR-36: Unattended operation</a></li><li><a class="toc-h4" href="#fr-37-structured-logs-and-run-history">FR-37: Structured logs and run history</a></li><li><a class="toc-h4" href="#fr-38-usage-spend-visibility">FR-38: Usage &amp;amp; spend visibility</a></li><li><a class="toc-h4" href="#fr-53-degrade-before-the-credit-cap">FR-53: Degrade before the credit cap</a></li></ul></li><li><a class="toc-h3" href="#411-action-items-to-do-list">4.11 Action Items (To-Do List)</a><ul><li><a class="toc-h4" href="#fr-39-maintain-a-unified-action-item-list">FR-39: Maintain a unified action-item list</a></li><li><a class="toc-h4" href="#fr-40-create-follow-up-items-from-recordings">FR-40: Create Follow-up items from recordings</a></li><li><a class="toc-h4" href="#fr-41-create-revisit-items-from-quiz-failures">FR-41: Create Revisit items from quiz failures</a></li><li><a class="toc-h4" href="#fr-42-deduplicate-action-items">FR-42: Deduplicate action items</a></li><li><a class="toc-h4" href="#fr-43-surface-action-items-to-the-user">FR-43: Surface action items to the user</a></li><li><a class="toc-h4" href="#fr-44-manage-action-items">FR-44: Manage action items</a></li><li><a class="toc-h4" href="#fr-45-close-the-loop-automatically">FR-45: Close the loop automatically</a></li></ul></li><li><a class="toc-h3" href="#412-web-application">4.12 Web Application</a><ul><li><a class="toc-h4" href="#fr-46-authenticated-single-user-access">FR-46: Authenticated single-user access</a></li><li><a class="toc-h4" href="#fr-47-upload-recordings">FR-47: Upload recordings</a></li><li><a class="toc-h4" href="#fr-48-ingestion-status-run-history">FR-48: Ingestion status &amp;amp; run history</a></li><li><a class="toc-h4" href="#fr-49-review-queue-ui">FR-49: Review Queue UI</a></li><li><a class="toc-h4" href="#fr-50-knowledge-base-browsing">FR-50: Knowledge-base browsing</a></li><li><a class="toc-h4" href="#fr-51-to-do-action-items-ui">FR-51: To-Do (Action Items) UI</a></li><li><a class="toc-h4" href="#fr-52-retention-settings">FR-52: Retention &amp;amp; settings</a></li></ul></li></ul></li><li><a class="" href="#5-non-goals-constraints-guardrails">5. Non-Goals, Constraints &amp;amp; Guardrails</a><ul><li><a class="toc-h3" href="#51-non-goals">5.1 Non-Goals</a></li><li><a class="toc-h3" href="#52-constraints-guardrails">5.2 Constraints &amp;amp; Guardrails</a></li></ul></li><li><a class="" href="#6-mvp-scope">6. MVP Scope</a><ul><li><a class="toc-h3" href="#61-in-scope">6.1 In Scope</a></li><li><a class="toc-h3" href="#62-out-of-scope-for-mvp">6.2 Out of Scope for MVP</a></li></ul></li><li><a class="" href="#7-success-metrics">7. Success Metrics</a></li><li><a class="" href="#8-open-questions">8. Open Questions</a></li><li><a class="" href="#9-assumptions-index">9. Assumptions Index</a></li></ul></li></ul>
+</nav>
+<main>
+<div class="frontmatter">title: Quizme
+status: draft
+created: 2026-09-06
+updated: 2026-09-06</div>
+<h1 id="prd-quizme">PRD: Quizme</h1>
+<p><em>Working title — confirm.</em></p>
+<h2 id="0-document-purpose">0. Document Purpose</h2>
+<p>This PRD is for the builder (also the sole user) and any future collaborator or agent implementing Quizme. It defines <strong>what</strong> the system must do, not how. It is Glossary-anchored: features are grouped, Functional Requirements (FR-N) are nested and globally numbered, assumptions are tagged inline as <code>[ASSUMPTION]</code> and indexed in §9. Technical choices (stack, transports, model IDs) live in the companion <strong>Architecture Spine</strong> (<code>docs/architecture-spine.md</code>), not here — but the platform shape is load-bearing enough to state up front:</p>
+<ul>
+<li><strong>Quizme is a hosted web application on Microsoft Azure</strong>, deployed <strong>serverless-first</strong> (Azure Functions / Container Apps, scale-to-zero where possible), backed by managed Postgres and Blob Storage, in region <strong>Southeast Asia</strong> (Singapore), in the user's own subscription.</li>
+<li><strong>Funding is a Visual Studio Enterprise (MCT) subscription monthly Azure credit — $150/month.</strong> It carries <strong>dev/test-only terms and a hard spending cap</strong> — see §5.2; this shapes the deployment model and makes the budget guardrail (FR-38, FR-53) and the export/re-host hedge (§5.2, AD-18) load-bearing, not nice-to-have.</li>
+<li><strong>Recordings are uploaded manually</strong> through the web app — no folder watch or device sync.</li>
+<li><strong>AI inference runs on Azure AI Foundry</strong> (chat) and <strong>Azure AI Speech</strong> (transcription) deployments inside the user's own Azure tenant — not a third-party consumer API.</li>
+<li><strong>The daily quiz is delivered by a Telegram bot</strong>; everything else (upload, review, browsing, to-do list, retention) lives in the web app.</li>
+</ul>
+<p>Internet fact-validation and a concept knowledge-graph are explicitly deferred (see §5.1, §6.2). A fully-local deployment (Ollama + local whisper on the user's Mac) is retained as a <strong>documented fallback</strong> for the day the credits lapse (§5.2, §6.2) — the architecture keeps every model/storage boundary swappable.</p>
+<h2 id="1-vision">1. Vision</h2>
+<p>Quizme turns a habit the user already has — talking through study material out loud and recording it on an iPhone — into a durable, self-maintaining body of knowledge that quizzes them back.</p>
+<p>The user records long, unstructured audio while studying. Most of that audio is thinking-out-loud, tangents, and repetition; a fraction is real material worth keeping. Quizme ingests each recording, transcribes it, keeps only the study-relevant parts, and extracts atomic <strong>Knowledge Units</strong> — single factual claims with a link back to the exact recording and timestamp they came from. As recordings accumulate, the same fact will be stated many times across many files; Quizme's <strong>Consolidation Engine</strong> uses an LLM to merge duplicates, absorb elaborations, and flag contradictions, so the knowledge base stays coherent instead of growing into noise. A readable <strong>Topic Note</strong> per subject is regenerated from the units whenever they change.</p>
+<p>Every day, Quizme picks the units the user is most at risk of forgetting (spaced-repetition scheduling), generates questions from them, and delivers a short quiz. The user answers in free text; an LLM grades semantically and the schedule updates. The result is a personal knowledge system that grows from the user's own voice and actively defends their retention over months and years.</p>
+<h2 id="2-target-user">2. Target User</h2>
+<h3 id="21-jobs-to-be-done">2.1 Jobs To Be Done</h3>
+<ul>
+<li><strong>Functional:</strong> "Capture what I learn while studying without stopping to write notes."</li>
+<li><strong>Functional:</strong> "Keep everything I've learned in one place that doesn't rot as it grows."</li>
+<li><strong>Functional:</strong> "Make sure I actually retain it — test me before I forget."</li>
+<li><strong>Emotional:</strong> "Feel confident my knowledge is still there, not quietly decaying."</li>
+<li><strong>Contextual:</strong> "Fit into a phone-first daily routine; the quiz has to be frictionless or I won't do it."</li>
+<li><strong>Builder framing:</strong> "This is for me. Success is that I use it daily and it survives contact with a year of recordings."</li>
+</ul>
+<h3 id="22-non-users-v1">2.2 Non-Users (v1)</h3>
+<ul>
+<li>Multiple users / shared knowledge bases. <code>[ASSUMPTION: single user; the web app authenticates exactly one identity.]</code></li>
+<li>People who want a note-taking app they type into. Quizme's input is voice; manual editing exists only as a correction path (§4.9).</li>
+<li>Learners who need authoritative correctness against external sources on day one — that is the deferred validation layer (§5.1).</li>
+</ul>
+<h3 id="23-key-user-journeys">2.3 Key User Journeys</h3>
+<ul>
+<li><strong>UJ-1. Basim records a study session and uploads it.</strong></li>
+<li><strong>Persona + context:</strong> Basim studies a technical topic by explaining it aloud while pacing. He does this most days for 20–60 minutes.</li>
+<li><strong>Entry state:</strong> iPhone Voice Memos. At his desk (or on his phone browser) he opens the Quizme web app, already signed in.</li>
+<li><strong>Path:</strong> He shares / exports the recording(s) and drops them onto the upload page → the app confirms "3 recordings received, processing" → the pipeline transcribes, filters, extracts units, and consolidates them into the knowledge base in the background.</li>
+<li><strong>Climax:</strong> Within a few minutes the ingestion status page shows "+12 units, 2 merges, 1 contradiction to review"; the next morning's quiz already reflects what he said.</li>
+<li><strong>Resolution:</strong> Knowledge base is current. One item waits in the Review Queue.</li>
+<li>
+<p><strong>Edge case:</strong> He uploads the same file twice → the second upload is recognized by content hash and skipped, not reprocessed.</p>
+</li>
+<li>
+<p><strong>UJ-2. Basim takes the daily quiz on his phone.</strong></p>
+</li>
+<li><strong>Persona + context:</strong> Morning coffee, 5 minutes, phone in hand.</li>
+<li><strong>Entry state:</strong> A push notification: "Today's quiz — 8 questions."</li>
+<li><strong>Path:</strong> He opens the chat, gets one question at a time, types a free-text answer, sees "correct / partially correct / missed" with the model answer and the source recording reference, moves to the next.</li>
+<li><strong>Climax:</strong> Finishing the quiz — he sees which topics are weak and that his schedule updated.</li>
+<li><strong>Resolution:</strong> Done for the day. Weak units resurface sooner.</li>
+<li>
+<p><strong>Edge case:</strong> He disputes a grade → one tap flags the question; it goes to the Review Queue and does not count against him.</p>
+</li>
+<li>
+<p><strong>UJ-3. Basim resolves a contradiction.</strong></p>
+</li>
+<li><strong>Persona + context:</strong> He earlier recorded two different values for the same fact (misremembered once).</li>
+<li><strong>Entry state:</strong> The web app shows a Review Queue badge: 1 item.</li>
+<li><strong>Path:</strong> He opens the queue → sees both claims side by side, each with its recording + timestamp → picks the correct one (or edits a merged version) → the loser is archived with a tombstone, not deleted.</li>
+<li><strong>Climax:</strong> The knowledge base now holds one correct unit; provenance from both recordings is retained.</li>
+<li>
+<p><strong>Resolution:</strong> Queue empty.</p>
+</li>
+<li>
+<p><strong>UJ-4. Basim works through what he told himself to look up.</strong></p>
+</li>
+<li><strong>Persona + context:</strong> While recording, Basim repeatedly says things like "I'm not sure about this, need to check the RFC" or "should read more on this later." He also missed two quiz questions this week.</li>
+<li><strong>Entry state:</strong> He opens the web app with a spare 20 minutes.</li>
+<li><strong>Path:</strong> He opens the To-Do page → sees a list grouped by Topic: 4 <strong>Follow-up</strong> items (each with the exact quote and the recording timestamp) and 2 <strong>Revisit</strong> items (KUs he missed, with the model answer) → he researches one follow-up, marks it done; snoozes another to next week; re-reads a Revisit KU's Topic Note.</li>
+<li><strong>Climax:</strong> The list shrinks; the two Revisit KUs are back in the quiz rotation sooner.</li>
+<li><strong>Resolution:</strong> Open items down to 3, one snoozed. Next time he answers those KUs correctly twice, the Revisit items close themselves.</li>
+<li><strong>Edge case:</strong> He said "check this" about the same thing in three separate recordings → it appears as <strong>one</strong> item with <code>trigger_count: 3</code>, not three items.</li>
+</ul>
+<h2 id="3-glossary">3. Glossary</h2>
+<p>Downstream code, prompts, and docs use these terms <strong>exactly</strong>. No synonyms elsewhere.</p>
+<ul>
+<li><strong>Recording</strong> — one audio file the user has <strong>uploaded</strong> through the web app (originating from iPhone Voice Memos). Immutable once accepted. Has a stable <code>recording_id</code> and a content hash.</li>
+<li><strong>Upload</strong> — one user action submitting one or more audio files to the web app. Produces one Recording per accepted file; duplicates (by content hash) are rejected.</li>
+<li><strong>Transcript</strong> — the full speech-to-text output for one Recording, with word- or segment-level timestamps. Immutable.</li>
+<li><strong>Web App</strong> — the authenticated single-user Azure-hosted web interface: upload, ingestion status, Review Queue, knowledge-base browsing, To-Do list, retention view. The system of engagement for everything except the daily quiz.</li>
+<li><strong>Segment</strong> — a contiguous span of a Transcript, classified as <code>study</code> or <code>noise</code>. Only <code>study</code> Segments proceed.</li>
+<li><strong>Knowledge Unit (KU)</strong> — one atomic claim (a single fact, definition, or relationship), with a canonical phrasing, optional alternate phrasings, one or more Topics, a <code>status</code>, and a <code>sources</code> list. The single source of truth for what the user knows.</li>
+<li><strong>Source</strong> — a <code>(recording_id, start, end)</code> reference on a KU, pointing at the span that supports it. A KU may have many.</li>
+<li><strong>Topic</strong> — a label grouping related KUs. Has a slug. Assigned by the extraction/consolidation LLM, editable by the user.</li>
+<li><strong>Topic Note</strong> — a human-readable Markdown document for one Topic, <strong>regenerated</strong> from that Topic's KUs. Never hand-authored as source of truth.</li>
+<li><strong>Consolidation</strong> — the process that takes newly extracted KUs and reconciles them against the existing knowledge base: merge, elaborate, flag contradiction, or insert as new.</li>
+<li><strong>KU Operation</strong> — one recorded, append-only change to the knowledge base (<code>create</code>, <code>merge</code>, <code>elaborate</code>, <code>flag_contradiction</code>, <code>split</code>, <code>archive</code>, <code>edit</code>). The knowledge base state is the fold of all KU Operations.</li>
+<li><strong>Contradiction</strong> — two KUs that make incompatible claims about the same subject. Never auto-resolved.</li>
+<li><strong>Review Queue</strong> — the list of items requiring a user decision (contradictions, low-confidence extractions, disputed quiz grades).</li>
+<li><strong>Card</strong> — spaced-repetition scheduling state (FSRS) attached to one KU: due date, stability, difficulty, review history.</li>
+<li><strong>Quiz</strong> — the set of Questions delivered on one day.</li>
+<li><strong>Question</strong> — one item generated from one KU for one Quiz. Types: short-answer, cloze (fill-in-the-blank), free recall.</li>
+<li><strong>Grade</strong> — the LLM's evaluation of a free-text Answer against the KU: <code>correct</code>, <code>partial</code>, or <code>missed</code>, with a rationale.</li>
+<li><strong>Answer</strong> — the user's free-text response to a Question.</li>
+<li><strong>Action Item</strong> — a task for the user to do <em>outside</em> Quizme (research a topic, verify a claim, re-learn something). Has an <code>origin</code>, a <code>status</code> (<code>open</code>, <code>done</code>, <code>dismissed</code>, <code>snoozed</code>), a Source and/or a linked KU and Topic, timestamps, an optional revisit date, and a <code>trigger_count</code>.</li>
+<li><strong>Follow-up</strong> — an Action Item <code>origin</code>: in a Recording the user expressed intent to check, research, or verify something later ("I should look into…", "need to confirm…", "TODO: read the paper on…").</li>
+<li><strong>Revisit</strong> — an Action Item <code>origin</code>: the user answered a Question <code>missed</code> (or repeatedly <code>partial</code>), so the linked KU is queued to be re-learned.</li>
+</ul>
+<h2 id="4-features">4. Features</h2>
+<h3 id="41-audio-ingestion-transcription">4.1 Audio Ingestion &amp; Transcription</h3>
+<p><strong>Description:</strong> The user uploads recordings through the web app (§4.12, FR-47). Each accepted Recording is stored immutably, then processed exactly once through the background pipeline: transcribe, store the Transcript, and hand off to filtering. Realizes UJ-1. <code>[ASSUMPTION: recordings are m4a/mp3/wav exported from iPhone Voice Memos; per-file size cap is configured.]</code> <code>[ASSUMPTION: transcription uses Azure AI Speech batch/fast transcription (Whisper model), which is available in the Southeast Asia region — Azure OpenAI's Whisper deployment is not in that region.]</code> <code>[ASSUMPTION: English only for v1.]</code></p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-1-accept-an-uploaded-recording-exactly-once">FR-1: Accept an uploaded recording exactly once</h4>
+<p>On a successful Upload, the system durably stores each new audio file as a Recording and enqueues it for processing; a re-upload of the same bytes is recognized and not stored or processed again.</p>
+<p><strong>Consequences (testable):</strong>
+- The web request returns success only after the file is durably stored (not merely received in memory).
+- Two uploads of byte-identical content produce one Recording; the second is reported as "already have this."
+- A queued-but-not-yet-processed Recording survives an application restart.
+- An upload that fails midway leaves no partial Recording.</p>
+<h4 id="fr-2-preserve-the-original-immutably">FR-2: Preserve the original immutably</h4>
+<p>The system stores each Recording's original bytes in content-addressed object storage and never mutates or deletes them from the pipeline.</p>
+<p><strong>Consequences (testable):</strong>
+- The stored original is byte-identical to what was uploaded.
+- No pipeline stage modifies or deletes a stored Recording.
+- The knowledge base can be fully rebuilt from stored Recordings + Transcripts alone.</p>
+<h4 id="fr-3-transcribe-with-timestamps">FR-3: Transcribe with timestamps</h4>
+<p>The system produces a Transcript with at least segment-level timestamps for every Recording.</p>
+<p><strong>Consequences (testable):</strong>
+- Every Transcript segment carries a start and end time.
+- Transcription failure is recorded against the Recording and retried, not silently dropped.
+- Transcript is stored immutably and linked to its Recording.</p>
+<h4 id="fr-4-report-ingestion-outcome">FR-4: Report ingestion outcome</h4>
+<p>For each processed Recording (or batch), the system records and shows a summary: transcription status, units added, merges, contradictions raised, follow-ups detected, failures.</p>
+<p><strong>Consequences (testable):</strong>
+- The summary is visible on the web app's ingestion status page (FR-48) with per-Recording detail.
+- A batch that raises a contradiction or a failure also pushes a short Telegram notice; a clean batch does not (no noise).</p>
+<h3 id="42-relevance-filtering-segmentation">4.2 Relevance Filtering &amp; Segmentation</h3>
+<p><strong>Description:</strong> Most recorded audio is not study content. An LLM pass splits each Transcript into Segments and labels each <code>study</code> or <code>noise</code>; only <code>study</code> Segments continue. Realizes UJ-1.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-5-classify-transcript-segments">FR-5: Classify transcript segments</h4>
+<p>The system partitions each Transcript into Segments and assigns each a <code>study</code> / <code>noise</code> label with a confidence.</p>
+<p><strong>Consequences (testable):</strong>
+- Every part of the Transcript belongs to exactly one Segment (no gaps, no overlap).
+- Each Segment records the label, confidence, and the model/prompt version that produced it.
+- Re-running classification with an unchanged prompt version is a no-op.</p>
+<h4 id="fr-6-retain-full-context-for-audit">FR-6: Retain full context for audit</h4>
+<p><code>noise</code> Segments are retained (not discarded), linked to the Transcript, and excluded only from downstream extraction.</p>
+<p><strong>Consequences (testable):</strong>
+- A reviewer can view the whole Transcript with <code>study</code>/<code>noise</code> shading.
+- Reclassifying a Segment <code>noise → study</code> later triggers extraction for just that Segment.</p>
+<h4 id="fr-7-low-confidence-handling">FR-7: Low-confidence handling</h4>
+<p>Segments near the <code>study</code>/<code>noise</code> decision boundary are treated as <code>study</code> (fail toward keeping content) but marked for optional review.</p>
+<p><strong>Consequences (testable):</strong>
+- A Segment with confidence below a configured threshold is still extracted from.
+- Such Segments are listed in an "uncertain" view.</p>
+<h3 id="43-knowledge-extraction">4.3 Knowledge Extraction</h3>
+<p><strong>Description:</strong> From <code>study</code> Segments, an LLM extracts atomic Knowledge Units — one claim each — with a canonical phrasing, candidate Topics, and Sources pointing at the originating span. The same pass also scans <code>study</code> Segments for <strong>Follow-up</strong> intents — moments where the user says they need to check, verify, or research something later — which become Action Items (§4.11, FR-40). Realizes UJ-1, UJ-4.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-8-extract-atomic-units">FR-8: Extract atomic units</h4>
+<p>The system produces Knowledge Units from <code>study</code> Segments, each expressing exactly one claim.</p>
+<p><strong>Consequences (testable):</strong>
+- Each KU has a canonical phrasing that stands alone without the surrounding transcript.
+- Each KU has at least one Source <code>(recording_id, start, end)</code>.
+- Each KU has at least one candidate Topic.
+- A Segment yielding no factual content produces zero KUs (not an empty KU).</p>
+<h4 id="fr-9-capture-alternate-phrasings">FR-9: Capture alternate phrasings</h4>
+<p>When the same Segment states a claim more than one way, the system keeps the additional phrasings on the KU.</p>
+<p><strong>Consequences (testable):</strong>
+- Alternate phrasings are stored as a list on the KU and are available to Question generation.</p>
+<h4 id="fr-10-flag-uncertain-extractions">FR-10: Flag uncertain extractions</h4>
+<p>Extractions the model is not confident represent a real, correct-as-stated claim are marked for review rather than silently inserted.</p>
+<p><strong>Consequences (testable):</strong>
+- A low-confidence KU enters the Review Queue with its Source.
+- It does not appear in quizzes until confirmed.</p>
+<h3 id="44-consolidation-engine">4.4 Consolidation Engine</h3>
+<p><strong>Description:</strong> New KUs are reconciled against the existing knowledge base. For each new KU the system finds semantically near existing KUs and an LLM decides, per candidate pair: <strong>duplicate</strong> (merge), <strong>elaboration</strong> (merge and enrich), <strong>contradiction</strong> (flag, keep both), or <strong>new</strong> (insert). All changes are recorded as append-only KU Operations. Consolidation is always scoped to one recording's output plus neighbors, or to one Topic — never the whole corpus. Realizes UJ-1, UJ-3.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-11-semantic-candidate-retrieval">FR-11: Semantic candidate retrieval</h4>
+<p>For each new KU the system retrieves the most semantically similar existing KUs as merge candidates.</p>
+<p><strong>Consequences (testable):</strong>
+- Retrieval uses vector similarity over KU embeddings.
+- The candidate set size is bounded by configuration.</p>
+<h4 id="fr-12-adjudicate-each-candidate">FR-12: Adjudicate each candidate</h4>
+<p>An LLM classifies each <code>(new KU, existing KU)</code> pair as <code>duplicate</code>, <code>elaboration</code>, <code>contradiction</code>, or <code>unrelated</code>.</p>
+<p><strong>Consequences (testable):</strong>
+- The decision, rationale, model version, and prompt version are recorded on the resulting KU Operation.
+- <code>unrelated</code> for all candidates results in the new KU being inserted as <code>create</code>.</p>
+<h4 id="fr-13-merge-duplicates-without-losing-provenance">FR-13: Merge duplicates without losing provenance</h4>
+<p>A <code>duplicate</code> decision merges the two KUs into one, keeping the richer canonical phrasing, unioning Sources, and appending the other phrasing to alternates.</p>
+<p><strong>Consequences (testable):</strong>
+- The merged KU's <code>sources</code> is the set union of both inputs' Sources — no Source is dropped.
+- The superseded KU id is retained as a tombstone pointing at the survivor.
+- The operation is reversible from the KU Operation log.</p>
+<h4 id="fr-14-absorb-elaborations">FR-14: Absorb elaborations</h4>
+<p>An <code>elaboration</code> decision updates the surviving KU's claim to the more complete form and unions Sources.</p>
+<p><strong>Consequences (testable):</strong>
+- The pre-elaboration phrasing is retained in history.
+- Topics are unioned.</p>
+<h4 id="fr-15-flag-contradictions-never-auto-resolve">FR-15: Flag contradictions, never auto-resolve</h4>
+<p>A <code>contradiction</code> decision creates a Review Queue item holding both KUs; neither is edited, merged, or archived automatically.</p>
+<p><strong>Consequences (testable):</strong>
+- Both KUs remain individually queryable until the user decides.
+- Both KUs are suppressed from quizzes while the contradiction is open (configurable).
+- Resolving the item records a user-attributed KU Operation.</p>
+<h4 id="fr-16-periodic-per-topic-reorganization">FR-16: Periodic per-Topic reorganization</h4>
+<p>When a Topic accumulates a configured amount of change, the system runs a scoped LLM pass over only that Topic's KUs to split overly broad claims, merge stragglers, and tidy Topic assignment.</p>
+<p><strong>Consequences (testable):</strong>
+- The pass never receives KUs from outside the Topic.
+- Every change is a logged KU Operation.
+- The run is skippable and does not block ingestion.</p>
+<p><strong>Feature-specific NFRs:</strong>
+- No single LLM call in this feature receives more than one recording's KUs plus their retrieval neighbors, or one Topic's KUs.</p>
+<h3 id="45-knowledge-base-topic-notes">4.5 Knowledge Base &amp; Topic Notes</h3>
+<p><strong>Description:</strong> The knowledge base is the set of live KUs, derived by folding the KU Operation log. Per Topic, a readable Markdown Topic Note is regenerated from the live KUs whenever they change. Realizes UJ-1.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-17-knowledge-base-as-a-projection">FR-17: Knowledge base as a projection</h4>
+<p>Current knowledge base state is deterministically derived from the append-only KU Operation log.</p>
+<p><strong>Consequences (testable):</strong>
+- Replaying the log from empty reproduces the identical live KU set.
+- No KU is mutated in place outside a recorded KU Operation.</p>
+<h4 id="fr-18-regenerate-topic-notes">FR-18: Regenerate Topic Notes</h4>
+<p>After KUs in a Topic change, the system regenerates that Topic Note from its live KUs.</p>
+<p><strong>Consequences (testable):</strong>
+- A Topic Note is never an input to any other pipeline stage.
+- Each Topic Note lists or links the Sources behind its content.
+- Regeneration is idempotent given unchanged KUs and prompt version.</p>
+<h4 id="fr-19-browse-and-search">FR-19: Browse and search</h4>
+<p>In the web app (FR-50) the user can browse Topics, read Topic Notes, and search KUs by text and by Topic.</p>
+<p><strong>Consequences (testable):</strong>
+- Every KU shown exposes its Sources (recording + timestamp), with a link to play the audio span.
+- Search covers canonical and alternate phrasings.</p>
+<h4 id="fr-20-full-rebuild">FR-20: Full rebuild</h4>
+<p>The system can rebuild the entire knowledge base from stored Recordings + Transcripts (re-running filter → extract → consolidate) on demand.</p>
+<p><strong>Consequences (testable):</strong>
+- A rebuild into an empty store completes without manual intervention.
+- Rebuild uses current prompt/model versions and records that in the new KU Operations.</p>
+<h3 id="46-review-queue">4.6 Review Queue</h3>
+<p><strong>Description:</strong> A single place for everything needing a human decision: contradictions (FR-15), uncertain segments/extractions (FR-7, FR-10), and disputed quiz grades (FR-31). Realizes UJ-3.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-21-unified-queue">FR-21: Unified queue</h4>
+<p>All items requiring a decision appear in one list in the web app (FR-49) with type, context, and the relevant Sources.</p>
+<p><strong>Consequences (testable):</strong>
+- A contradiction item shows both KUs with their recordings and timestamps.
+- Items are actionable without leaving the queue view.</p>
+<h4 id="fr-22-resolve-with-attribution">FR-22: Resolve with attribution</h4>
+<p>Resolving an item records a user-attributed KU Operation (or grade correction) and removes it from the queue.</p>
+<p><strong>Consequences (testable):</strong>
+- The chosen resolution (keep A / keep B / keep edited merge / dismiss) is logged.
+- Archived KUs are tombstoned, not deleted.</p>
+<h4 id="fr-23-queue-does-not-block-ingestion">FR-23: Queue does not block ingestion</h4>
+<p>New recordings continue to be ingested while queue items are open.</p>
+<p><strong>Consequences (testable):</strong>
+- Ingestion of unrelated Topics is unaffected by an open contradiction.</p>
+<h3 id="47-daily-quiz-scheduling-generation">4.7 Daily Quiz — Scheduling &amp; Generation</h3>
+<p><strong>Description:</strong> Once per day the system selects the KUs most due for review (FSRS), generates a Question per selected KU, and delivers the Quiz to the user's channel one question at a time. Realizes UJ-2.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-24-spaced-repetition-scheduling">FR-24: Spaced-repetition scheduling</h4>
+<p>Each quiz-eligible KU has a Card with FSRS scheduling state; selection prioritizes KUs whose predicted recall has dropped toward a configured threshold.</p>
+<p><strong>Consequences (testable):</strong>
+- A new KU gets a Card on first becoming quiz-eligible.
+- A KU under an open contradiction or awaiting review confirmation is not selected.
+- Daily selection is capped at a configured maximum number of Questions.</p>
+<h4 id="fr-25-generate-questions-from-kus">FR-25: Generate questions from KUs</h4>
+<p>The system generates one Question per selected KU, varying type across short-answer, cloze, and free recall.</p>
+<p><strong>Consequences (testable):</strong>
+- A Question is answerable from the KU alone (no outside knowledge required beyond the studied material).
+- The Question stores which KU and which phrasing it derives from.
+- Cloze questions blank a load-bearing term, not a trivial word.</p>
+<h4 id="fr-26-deliver-one-question-at-a-time">FR-26: Deliver one question at a time</h4>
+<p>The Quiz is delivered conversationally: one Question, wait for an Answer, respond with the Grade, then the next.</p>
+<p><strong>Consequences (testable):</strong>
+- The user can stop mid-quiz and resume later the same day.
+- An unfinished quiz does not corrupt scheduling (only answered Questions update Cards).</p>
+<h4 id="fr-27-notify-when-the-quiz-is-ready">FR-27: Notify when the quiz is ready</h4>
+<p>The system sends a notification at the configured time with the question count.</p>
+<p><strong>Consequences (testable):</strong>
+- Exactly one notification per day unless the user requests a re-send.
+- If there are zero due KUs, the notification says so rather than fabricating questions.</p>
+<h4 id="fr-28-configurable-cadence-and-volume">FR-28: Configurable cadence and volume</h4>
+<p>Quiz time of day and maximum questions per day are user-configurable.</p>
+<p><strong>Consequences (testable):</strong>
+- Changing the time takes effect the next day.
+- Lowering the cap does not lose the un-quizzed KUs; they remain due.</p>
+<h3 id="48-answer-grading-retention-tracking">4.8 Answer Grading &amp; Retention Tracking</h3>
+<p><strong>Description:</strong> The user's free-text Answer is graded semantically by an LLM against the KU; the Grade drives the FSRS update. A failing Grade also spawns a <strong>Revisit</strong> Action Item for that KU (§4.11, FR-41). Realizes UJ-2, UJ-4.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-29-semantic-grading">FR-29: Semantic grading</h4>
+<p>The system grades each Answer as <code>correct</code>, <code>partial</code>, or <code>missed</code> by meaning, not string match, with a short rationale and the model answer.</p>
+<p><strong>Consequences (testable):</strong>
+- A correct answer phrased differently from the KU is graded <code>correct</code>.
+- The rationale references what was right/missing.
+- The Grade records the model and prompt version.</p>
+<h4 id="fr-30-update-the-schedule">FR-30: Update the schedule</h4>
+<p>Each Grade updates the KU's Card via FSRS: <code>correct</code> pushes the next review out, <code>partial</code>/<code>missed</code> pull it in.</p>
+<p><strong>Consequences (testable):</strong>
+- Card stability/difficulty/due-date change per the FSRS algorithm on each graded Answer.
+- Review history is retained per Card.</p>
+<h4 id="fr-31-dispute-a-grade">FR-31: Dispute a grade</h4>
+<p>The user can dispute any Grade in one action; disputed Questions go to the Review Queue and do not update the Card until resolved.</p>
+<p><strong>Consequences (testable):</strong>
+- A disputed Question's Card is left unchanged pending resolution.
+- Resolution can overturn the Grade and then apply the corrected FSRS update.</p>
+<h4 id="fr-32-retention-view">FR-32: Retention view</h4>
+<p>In the web app (FR-52) the user can see, per Topic, how many KUs are strong / weak / overdue.</p>
+<p><strong>Consequences (testable):</strong>
+- The view is derived from Card state.
+- It updates after each quiz.</p>
+<h3 id="49-corrections-manual-edits">4.9 Corrections &amp; Manual Edits</h3>
+<p><strong>Description:</strong> The user can directly correct the knowledge base — fix a wrong KU, merge two, re-topic, archive — through the same KU Operation log used by the engine. Realizes UJ-3.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-33-edit-a-ku">FR-33: Edit a KU</h4>
+<p>The user can edit a KU's canonical phrasing or Topics; the change is a recorded, user-attributed KU Operation.</p>
+<p><strong>Consequences (testable):</strong>
+- Prior phrasing is retained in history.
+- A user edit is never silently overwritten by later consolidation (consolidation treats a user-edited claim as authoritative unless a new contradiction is detected).</p>
+<h4 id="fr-34-manual-merge-split-archive">FR-34: Manual merge / split / archive</h4>
+<p>The user can merge two KUs, split one, or archive one, each as a recorded KU Operation.</p>
+<p><strong>Consequences (testable):</strong>
+- Archived KUs are tombstoned and excluded from quizzes and Topic Notes.
+- Sources are preserved through manual merges (union rule, FR-13).</p>
+<h4 id="fr-35-correct-a-source">FR-35: Correct a Source</h4>
+<p>The user can adjust a KU's Source span or remove an incorrect Source.</p>
+<p><strong>Consequences (testable):</strong>
+- A KU must retain at least one Source or be archived.</p>
+<h3 id="410-operability">4.10 Operability</h3>
+<p><strong>Description:</strong> The system runs unattended as a serverless-first Azure deployment (HTTP-triggered web/API + Telegram webhook, timer-triggered daily quiz, queue-triggered pipeline worker) and must be observable and recoverable by a single technical operator. <code>[ASSUMPTION: Azure Functions or Container Apps, scaling to zero where possible to fit dev/test credit terms and stretch the budget; Postgres Flexible Server (Burstable) is the one always-billing component.]</code></p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-36-unattended-operation">FR-36: Unattended operation</h4>
+<p>Ingestion processing and quiz delivery happen without the user starting anything; the app recovers on its own from restarts and transient failures.</p>
+<p><strong>Consequences (testable):</strong>
+- After a compute restart, cold start, or redeploy, queued Recordings are still processed and the daily quiz still fires.
+- A failure in one pipeline stage for one Recording does not block other Recordings or the quiz.
+- A failed stage is retried with backoff; after N attempts it is parked with a visible error, not lost.</p>
+<h4 id="fr-37-structured-logs-and-run-history">FR-37: Structured logs and run history</h4>
+<p>Every pipeline run and model call is logged with enough detail to diagnose a bad extraction or merge, and retained.</p>
+<p><strong>Consequences (testable):</strong>
+- Each model call logs model, prompt version, token counts, prompt hash, latency, and estimated cost.
+- A given KU can be traced back through its KU Operations to the exact recording spans and model/prompt versions involved.
+- Logs and run history survive redeploys (not on the ephemeral app filesystem).</p>
+<h4 id="fr-38-usage-spend-visibility">FR-38: Usage &amp; spend visibility</h4>
+<p>The system tracks model and transcription usage — tokens, audio-minutes, latency, estimated cost — per run and cumulatively per month, and warns before the monthly Azure budget is exhausted.</p>
+<p><strong>Consequences (testable):</strong>
+- A monthly running-cost estimate is visible in the web app.
+- Crossing a configurable percentage of the monthly budget pushes a Telegram warning.
+- The estimate breaks down by component (transcription, each LLM stage, infrastructure).</p>
+<h4 id="fr-53-degrade-before-the-credit-cap">FR-53: Degrade before the credit cap</h4>
+<p>When projected month-end spend would exceed the budget, the system throttles paid work — deferring new pipeline processing and the per-Topic reorganization — while keeping the daily quiz and any in-flight items running, and tells the user.</p>
+<p><strong>Consequences (testable):</strong>
+- Above the configured danger threshold, newly uploaded Recordings are still accepted and stored (cheap) but their pipeline processing is held until the budget resets.
+- The daily quiz and grading continue to run in the throttled state.
+- The user is notified when throttling engages and when it clears.
+- Held Recordings are processed automatically once the new billing period begins.</p>
+<h3 id="411-action-items-to-do-list">4.11 Action Items (To-Do List)</h3>
+<p><strong>Description:</strong> Quizme maintains a single to-do list of things the user should act on outside the app. Items arrive from two origins: <strong>Follow-up</strong> — the user, in a Recording, said they need to check / verify / research something later (detected during extraction, FR-40); and <strong>Revisit</strong> — the user failed a quiz Question, so the underlying KU is queued to be re-learned (FR-41). The user works the list, and items can close themselves when the evidence shows the gap is filled. Realizes UJ-4.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-39-maintain-a-unified-action-item-list">FR-39: Maintain a unified action-item list</h4>
+<p>The system keeps one list of Action Items, each with <code>origin</code> (<code>follow_up</code> | <code>revisit</code>), <code>status</code> (<code>open</code> | <code>snoozed</code> | <code>done</code> | <code>dismissed</code>), the verbatim trigger context, links to the relevant Source / KU / Topic, <code>trigger_count</code>, created/updated timestamps, and an optional revisit date.</p>
+<p><strong>Consequences (testable):</strong>
+- Every Action Item is traceable to what created it: a Recording span (follow-up) or a graded Question + KU (revisit).
+- <code>done</code> and <code>dismissed</code> items are retained with a resolution timestamp, not deleted.
+- The list is queryable by status, origin, and Topic.</p>
+<h4 id="fr-40-create-follow-up-items-from-recordings">FR-40: Create Follow-up items from recordings</h4>
+<p>During extraction, the system detects Segments where the user expresses intent to check, verify, or research something later, and creates a <code>follow_up</code> Action Item capturing the verbatim quote and its Source <code>(recording_id, start, end)</code>.</p>
+<p><strong>Consequences (testable):</strong>
+- The item stores the exact transcript text that triggered it.
+- A passing remark with no real intent ("anyway, moving on") does not create an item.
+- If the follow-up is clearly about an existing Topic or KU, the item is linked to it.
+- Detection confidence below a configured threshold routes the item to the Review Queue for confirmation instead of the open list.</p>
+<h4 id="fr-41-create-revisit-items-from-quiz-failures">FR-41: Create Revisit items from quiz failures</h4>
+<p>When a Question is graded <code>missed</code>, or graded <code>partial</code> on a configured number of consecutive reviews, the system creates or refreshes a <code>revisit</code> Action Item linked to that KU and its Topic.</p>
+<p><strong>Consequences (testable):</strong>
+- A <code>missed</code> grade always produces or refreshes a Revisit item for that KU.
+- The item carries the KU's canonical phrasing and the model answer from the failed Question.
+- A disputed Grade (FR-31) that is later overturned in the user's favor removes the Revisit item it created.</p>
+<h4 id="fr-42-deduplicate-action-items">FR-42: Deduplicate action items</h4>
+<p>Repeated triggers for the same underlying thing update the existing Action Item rather than creating duplicates.</p>
+<p><strong>Consequences (testable):</strong>
+- Follow-ups the model judges to be about the same thing (within a Topic) collapse to one item with <code>trigger_count</code> incremented and all Sources retained.
+- Repeated failures of the same KU increment <code>trigger_count</code> on the one Revisit item, not create new ones.
+- A dismissed item is not silently re-created by the next identical trigger within a configured cooldown; it is instead re-surfaced with a note.</p>
+<h4 id="fr-43-surface-action-items-to-the-user">FR-43: Surface action items to the user</h4>
+<p>The daily Telegram notification includes the count of open Action Items; the web app's To-Do page (FR-51) lists them grouped by Topic with overdue and snoozed-due items highlighted.</p>
+<p><strong>Consequences (testable):</strong>
+- Open-item count appears alongside the daily quiz notification (FR-27).
+- Snoozed items reappear as open on their revisit date.
+- The list view shows, per item, its origin, trigger context, and links.</p>
+<h4 id="fr-44-manage-action-items">FR-44: Manage action items</h4>
+<p>The user can mark an item <code>done</code>, <code>dismissed</code>, or <code>snoozed</code> (with a revisit date) in one action, from the list or inline after a quiz question.</p>
+<p><strong>Consequences (testable):</strong>
+- Each state change records a timestamp and (for snooze) the revisit date.
+- Marking a Revisit item <code>done</code> does not itself change the KU's Card; only quiz answers do (AD-9).</p>
+<h4 id="fr-45-close-the-loop-automatically">FR-45: Close the loop automatically</h4>
+<p>A <code>revisit</code> item auto-resolves when its KU is subsequently answered <code>correct</code> on two consecutive reviews. The system flags a <code>follow_up</code> item as "possibly addressed" when a later Recording adds KUs to its linked Topic.</p>
+<p><strong>Consequences (testable):</strong>
+- The auto-resolve is recorded with <code>origin=auto</code> on the resolution.
+- A "possibly addressed" follow-up is not closed automatically — it moves to the Review Queue for the user to confirm or keep open.</p>
+<p><strong>Feature-specific NFRs:</strong>
+- Action Items are tracked task state, not knowledge: creating, resolving, or deleting them never writes a KU Operation and never changes a Card.</p>
+<p><strong>Notes:</strong> <code>[NOTE FOR PM: the Follow-up detection threshold and the "what counts as real intent to research later" rubric need ~5 hand-labelled recordings before FR-40 can be tuned — same ground-truth exercise as FR-5.]</code></p>
+<h3 id="412-web-application">4.12 Web Application</h3>
+<p><strong>Description:</strong> The authenticated single-user web app is Quizme's primary surface — the only way recordings get in, and the place the user reviews, browses, and manages everything the pipeline produces. The daily quiz is the one thing that lives elsewhere (Telegram, §4.7). Realizes UJ-1, UJ-3, UJ-4.</p>
+<p><strong>Functional Requirements:</strong></p>
+<h4 id="fr-46-authenticated-single-user-access">FR-46: Authenticated single-user access</h4>
+<p>The web app is reachable only by the one authorized identity; there is no signup, no second account, no anonymous access.</p>
+<p><strong>Consequences (testable):</strong>
+- An unauthenticated request to any page or API route is rejected.
+- Authentication is enforced at the platform edge, before application code runs.
+- Losing the session requires re-authenticating; there is no "guest" view.</p>
+<h4 id="fr-47-upload-recordings">FR-47: Upload recordings</h4>
+<p>The user can upload one or more audio files in a single action, see per-file progress, and get a clear result per file (accepted / duplicate / rejected-with-reason).</p>
+<p><strong>Consequences (testable):</strong>
+- Multiple files can be selected and uploaded together.
+- Progress is shown during upload; a large file does not appear to hang.
+- Unsupported formats and over-size files are rejected client-side and server-side with a stated reason.
+- A duplicate (by content hash) is reported as such and not re-ingested (FR-1).
+- Closing the tab mid-upload does not corrupt state; already-transferred files are handled per FR-1.</p>
+<h4 id="fr-48-ingestion-status-run-history">FR-48: Ingestion status &amp; run history</h4>
+<p>The user can see what has been ingested and what is in flight: per Recording — transcription state, counts of KUs/merges/contradictions/follow-ups, and any error.</p>
+<p><strong>Consequences (testable):</strong>
+- A Recording still processing shows an in-progress state that updates without a manual refresh, or with an obvious refresh control.
+- A failed Recording shows the failing stage and the error, with a retry action.
+- History is retained and browsable, not just the last run.</p>
+<h4 id="fr-49-review-queue-ui">FR-49: Review Queue UI</h4>
+<p>The web app renders the Review Queue (§4.6) and lets the user resolve each item — contradictions, uncertain extractions, uncertain follow-ups, disputed grades — with the full context inline.</p>
+<p><strong>Consequences (testable):</strong>
+- Each item type has an appropriate resolution control (keep A / keep B / edit merge / confirm / dismiss).
+- Resolving an item updates the badge count and records the attributed operation (FR-22).</p>
+<h4 id="fr-50-knowledge-base-browsing">FR-50: Knowledge-base browsing</h4>
+<p>The web app provides the browse/search experience of FR-19: Topics, Topic Notes, KU search, and per-KU detail with Sources and audio playback of the source span.</p>
+<p><strong>Consequences (testable):</strong>
+- From a KU the user can reach every Recording span that supports it and play it.
+- From a KU the user can trigger the manual corrections of §4.9 (edit, merge, split, archive, fix Source).</p>
+<h4 id="fr-51-to-do-action-items-ui">FR-51: To-Do (Action Items) UI</h4>
+<p>The web app renders the Action Item list (§4.11) grouped by Topic, with done / dismiss / snooze controls and the trigger context for each item.</p>
+<p><strong>Consequences (testable):</strong>
+- Filtering by status and origin works.
+- Overdue and snoozed-due items are visually distinct.</p>
+<h4 id="fr-52-retention-settings">FR-52: Retention &amp; settings</h4>
+<p>The web app shows the retention view (FR-32) and exposes the user-configurable settings: quiz time and daily cap (FR-28), thresholds referenced by other FRs, and the monthly budget figure (FR-38).</p>
+<p><strong>Consequences (testable):</strong>
+- A settings change persists across restarts and takes effect per the owning FR's rules.</p>
+<p><strong>Feature-specific NFRs:</strong>
+- The web app is a thin surface over the application layer — it holds no business logic the pipeline and quiz flows don't also enforce.
+- No durable state is written to the app's local filesystem (it is ephemeral); everything persists to managed storage.</p>
+<h2 id="5-non-goals-constraints-guardrails">5. Non-Goals, Constraints &amp; Guardrails</h2>
+<h3 id="51-non-goals">5.1 Non-Goals</h3>
+<ul>
+<li><strong>Not</strong> validating claims against the internet in v1. Deferred to v2 as an advisory layer that never auto-overwrites a KU. <code>[NOTE FOR PM: user confirmed deferral; keep the KU schema and Review Queue ready for it.]</code></li>
+<li><strong>Not</strong> building a concept knowledge-graph (e.g. cognee) in v1. Flat KUs + embeddings + Topic tags + a lightweight link table are the v1 model; graph structure is added only if retrieval quality demonstrably falls short.</li>
+<li><strong>Not</strong> a multi-user or shareable product. The web app authenticates one identity; no signup, no accounts, no collaboration, no sharing links.</li>
+<li><strong>Not</strong> a native mobile app. The web app is responsive and usable from a phone browser; the daily quiz is a Telegram bot. No App Store presence, no offline mobile client.</li>
+<li><strong>Not</strong> a general note-taking or document-import tool. Input is the user's own study audio, uploaded manually.</li>
+<li><strong>Not</strong> real-time transcription or live capture. Recordings are processed after the fact.</li>
+<li><strong>Not</strong> a diarization / multi-speaker product. <code>[ASSUMPTION: recordings are the user speaking alone; basic single-speaker handling only.]</code></li>
+<li><strong>Not</strong> a general task manager or GTD system. Action Items (§4.11) exist only to serve learning — research follow-ups the user dictated and knowledge gaps the quiz exposed. No projects, sub-tasks, priorities, or arbitrary user-created tasks.</li>
+<li><strong>Not</strong> integrated with external task or calendar apps (Apple Reminders, Todoist, Google Calendar) in v1. <code>[ASSUMPTION: the to-do list lives inside Quizme only — revisit for v1.1.]</code></li>
+</ul>
+<h3 id="52-constraints-guardrails">5.2 Constraints &amp; Guardrails</h3>
+<p><strong>Hosting</strong>
+- Quizme is deployed to <strong>Microsoft Azure</strong>, region <strong>Southeast Asia</strong> (Singapore — note: the AWS-style code <code>ap-southeast-1</code> is not an Azure region name), in the user's own subscription: serverless compute (Azure Functions / Container Apps), Azure Database for PostgreSQL Flexible Server (Burstable), Azure Blob Storage, Azure Storage Queue, Azure AI Foundry (chat), Azure AI Speech (transcription — Whisper via Azure OpenAI is not offered in Southeast Asia), Key Vault.
+- Compute is <strong>serverless-first and scales to zero</strong> where the workload allows (HTTP web/API, Telegram webhook, timers, queue worker). Postgres is the one component that bills continuously.
+- All compute filesystems are ephemeral: <strong>all durable state lives in managed Postgres and Blob Storage</strong> (AD-17).</p>
+<p><strong>Funding &amp; its constraints (Visual Studio / MCT subscription credit)</strong>
+- The Azure credit is the <strong>Visual Studio Enterprise (MCT) monthly benefit — $150/month.</strong> At the ~$55–100/month running estimate below, that leaves meaningful headroom even with a top-tier model on every stage.
+- These credits are <strong>for individual dev/test use, not production workloads.</strong> Microsoft may suspend compute it judges to be production, and historically suspends any single instance running continuously past ~120 hours. <strong>This is why the deployment is serverless / scale-to-zero</strong> — it keeps compute intermittent and within the spirit of the terms. It is still a grey area for a personally-used "production" app; the user accepts that risk knowingly. A pay-as-you-go subscription (paying ~$60–90/month) is the fully-compliant alternative if it ever matters.
+- The credit is a <strong>hard spending cap</strong>: when it is exhausted, Azure <strong>disables the subscription's services for the rest of the billing period</strong> — Quizme goes offline until the 1st, it does not silently run up a bill. <strong>This makes FR-53 (degrade before the cap) a real requirement, not an optimisation.</strong></p>
+<p><strong>Privacy</strong>
+- AI inference runs on <strong>Azure AI Foundry / Azure AI Speech deployments in the user's own Azure tenant</strong> — not OpenAI's or Anthropic's public consumer APIs. Audio, Transcripts, Knowledge Units, and Topic Notes are stored only in the user's Azure resources.
+- <strong>CONFIRMED:</strong> a top-tier chat model is deployable in Southeast Asia (Regional or DataZone) with usable quota — inference stays in the user's Azure tenant and, with a Regional deployment, in the Singapore region. <code>[ASSUMPTION: v1 uses a GPT-4.1-class **Regional** deployment as the default (best data residency); switching to Claude or a DataZone deployment is a config change.]</code>
+- <strong>One accepted exception: quiz delivery.</strong> Generated Questions, model answers, and the user's typed Answers transit Telegram's servers. This exposes the substance of individual Knowledge Units <em>as they are quizzed</em>. It does <strong>not</strong> expose raw audio, Transcripts, Sources, Topic Notes, the Review Queue, or the knowledge base as a whole.
+- The web app is reachable on the public internet but gated by <strong>App Service / Functions built-in "Easy Auth"</strong> (Entra ID) restricted to the single authorized identity (FR-46).</p>
+<p><strong>Cost</strong>
+- The running cost must stay <strong>within the $150/month credit.</strong> Serverless-first estimate at ~1–1.5 hours of audio/day: Postgres ~$15–20, Blob/Queue ~$2, Functions/Container Apps ~$0–10 (mostly within free grants at this volume), transcription (AI Speech) ~$10–15, LLM ~$25–55 with a top-tier model on every stage → <strong>~$55–100/month</strong>, comfortably under $150. The per-stage model override (relevance filter + follow-up detection → cheaper model) is the first dial if audio volume grows.
+- <strong>Credit-lapse must not be catastrophic.</strong> The knowledge base is exportable on demand (Postgres dump + Blob manifest), and every model / storage boundary is behind a port with a documented local implementation (Ollama + local whisper + SQLite) so the system can be moved back to the user's Mac (AD-18). <code>[NOTE FOR PM: deliberate hedge against the credit being temporary or capped — see §6.2.]</code></p>
+<p><strong>Quality</strong>
+- With capable Foundry models on every stage, the judgment-heavy jobs (contradiction detection, answer grading) are expected to be solid. The Review Queue (§4.6) and grade dispute (FR-31) remain the safety nets. Consolidation still errs toward <strong>not merging when unsure</strong> (an over-merge loses information; a missed merge is cleaned up later by FR-16 or a manual merge) — this is defense-in-depth, not a model-capability workaround.
+- Model behavior is validated against a small eval set built from hand-labelled recordings (§8 Open Q 3) before and after v1.</p>
+<h2 id="6-mvp-scope">6. MVP Scope</h2>
+<h3 id="61-in-scope">6.1 In Scope</h3>
+<ul>
+<li>Azure deployment in Southeast Asia: serverless compute (Functions / Container Apps, scale-to-zero), managed Postgres + pgvector, Blob Storage, Storage Queue, Key Vault + Managed Identity, one Foundry chat deployment + Azure AI Speech for transcription (§5.2).</li>
+<li>Web app: authenticated single-user access, upload, ingestion status/history, Review Queue UI, KB browsing with audio playback, To-Do UI, retention &amp; settings (FR-46–FR-52).</li>
+<li>Manual upload ingestion, immutable Blob storage, dedup on content hash (FR-1–FR-4).</li>
+<li>Azure AI Speech transcription with word/segment timestamps (FR-3).</li>
+<li>Foundry LLM inference for every stage — filtering, extraction, consolidation, follow-up detection, question generation, grading, note regeneration.</li>
+<li>LLM relevance filtering / segmentation (FR-5–FR-7).</li>
+<li>LLM atomic KU extraction with Sources (FR-8–FR-10).</li>
+<li>Consolidation Engine: scoped semantic dedup, elaboration, contradiction flagging, append-only KU Operation log (FR-11–FR-15).</li>
+<li>Knowledge base as a log projection; regenerated Topic Notes; browse/search; full rebuild (FR-17–FR-20).</li>
+<li>Unified Review Queue (FR-21–FR-23).</li>
+<li>Daily FSRS-scheduled quiz on Telegram, question generation, one-at-a-time delivery, notification (FR-24–FR-28).</li>
+<li>Semantic grading, FSRS updates, grade dispute, retention view (FR-29–FR-32).</li>
+<li>Manual corrections through the KU Operation log (FR-33–FR-35).</li>
+<li>Unattended operation, retained logs &amp; run history, spend tracking with budget warning, degrade-before-cap throttling (FR-36–FR-38, FR-53).</li>
+<li>Action Items: Follow-up extraction, Revisit items from quiz failures, dedup, list management, daily-notification count, <code>correct</code>×2 auto-resolve (FR-39–FR-44, and the auto-resolve half of FR-45).</li>
+<li>On-demand export of the knowledge base (Postgres dump + Blob manifest) — the credit-lapse hedge (§5.2).</li>
+</ul>
+<h3 id="62-out-of-scope-for-mvp">6.2 Out of Scope for MVP</h3>
+<ul>
+<li>Internet fact-validation (v2). Load-bearing — revisit once the ingestion→quiz loop is proven. <code>[NOTE FOR PM]</code></li>
+<li>Per-Topic periodic reorganization (FR-16) — desirable early but can trail the first release by weeks; ship the ingest-time consolidation first.</li>
+<li>Concept knowledge-graph / multi-hop retrieval (v2+).</li>
+<li>Multi-language transcription (v2).</li>
+<li>Speaker diarization (v2, only if recordings start including others).</li>
+<li>Infrastructure-as-code for the full Azure estate, blue/green deploys, multi-region, and automated DB failover (v1.1+ — v1 provisions resources with scripts/portal and relies on Azure's managed backups).</li>
+<li>A <strong>fully-local deployment</strong> (Ollama + local whisper + SQLite on the user's Mac). The adapter seams and the export in §6.1 make this possible; actually building and testing that deployment is deferred until/unless Azure credits lapse. <code>[NOTE FOR PM: this is the documented exit, not a shipped feature.]</code></li>
+<li>Weekly/periodic digest emails (nice-to-have, v1.1).</li>
+<li>Action Items: the "possibly addressed" detection for Follow-ups (second half of FR-45) — v1.1. Also external task/calendar sync, recurring items, and priority ordering (v2).</li>
+<li>The quiz in the web app (Telegram only for v1).</li>
+</ul>
+<h2 id="7-success-metrics">7. Success Metrics</h2>
+<p><strong>Primary</strong>
+- <strong>SM-1: Daily quiz completion.</strong> The user completes the daily quiz on ≥ 5 of 7 days, sustained over 4+ weeks. Validates FR-24–FR-30. <em>This is the make-or-break metric — the loop only works if the habit holds.</em>
+- <strong>SM-2: Knowledge base coherence.</strong> After 100+ recordings, a manual audit of a random 50-KU sample finds ≤ 10% that are duplicates, contradictions missed, or wrongly merged. Validates FR-11–FR-16.</p>
+<p><strong>Secondary</strong>
+- <strong>SM-3: Extraction usefulness.</strong> ≥ 70% of extracted KUs are judged "worth being quizzed on" by the user in a spot review. Validates FR-8.
+- <strong>SM-4: Filter precision.</strong> Manual review of 10 recordings finds &lt; 15% of <code>study</code> Segment content is actually noise, and &lt; 5% of real study content was dropped as noise. Validates FR-5.
+- <strong>SM-5: Grading trust.</strong> Grade dispute rate &lt; 5% of graded answers, and ≥ 80% of disputes resolve in the user's favor when raised. Validates FR-29.
+- <strong>SM-6: Action items get resolved.</strong> Median time-to-resolution for an Action Item is under 3 weeks, and open items older than 60 days stay below 20% of the list. Validates FR-39–FR-45. <em>A to-do list that only grows is a failed feature.</em>
+- <strong>SM-7: Follow-up precision.</strong> In a spot review of 20 detected Follow-ups, ≥ 75% represent a real intent the user recognizes as worth tracking. Validates FR-40.
+- <strong>SM-8: Runs within budget.</strong> Total monthly Azure spend stays at or below the $150 credit for every month of normal use — and ideally below a ~$120 soft ceiling so a heavier month has slack. Validates FR-38, FR-53, §5.2.</p>
+<p><strong>Counter-metrics (do not optimize)</strong>
+- <strong>SM-C1: KU volume.</strong> Total KU count must <em>not</em> be maximized — inflating it by keeping weak or near-duplicate units games SM-3 and buries SM-2. Counterbalances SM-3.
+- <strong>SM-C2: Questions per day.</strong> Do <em>not</em> raise the daily cap to look thorough; an overlong quiz kills SM-1. Counterbalances SM-1.
+- <strong>SM-C3: "Correct" rate.</strong> A high quiz score is not a goal; a lenient grader that inflates <code>correct</code> destroys the retention signal. Counterbalances SM-5.
+- <strong>SM-C4: Action-item creation rate.</strong> Do <em>not</em> treat more detected Follow-ups as better — a trigger-happy detector floods the list and destroys SM-6. Counterbalances SM-7.</p>
+<h2 id="8-open-questions">8. Open Questions</h2>
+<ol>
+<li>~~<strong>Delivery surface</strong>~~ — <strong>RESOLVED: daily quiz on Telegram; everything else in the web app</strong> (§4.12). The privacy trade-off (Questions and Answers transit Telegram; nothing else does) is accepted — see §5.2. Moving the quiz into the web app later touches only the delivery adapter.</li>
+<li>~~<strong>How does audio reach the system</strong>~~ — <strong>RESOLVED: manual upload through the web app</strong> (FR-47). No device sync, no folder watch.</li>
+<li><strong>What counts as "study-relevant"</strong> — needs a written rubric with examples before FR-5 can be tuned. Hand-label ~5 recordings as ground truth, and extend that set into an eval for the Foundry model on consolidation adjudication and grading; run it before locking the model choice and again after v1.</li>
+<li><strong>When does a KU become quiz-eligible</strong> — immediately on <code>create</code>, or only after surviving one consolidation pass, or only after the user has seen it once? Affects FR-24.</li>
+<li>~~<strong>Azure credit type</strong>~~ — <strong>RESOLVED: Visual Studio Enterprise (MCT) credit, $150/month.</strong> Dev/test-only terms, hard spending cap (overrun → subscription disabled until next period). Drives serverless-first deployment (§5.2) and FR-53.</li>
+<li><strong>Contradiction suppression</strong> — while a contradiction is open, suppress both KUs from quizzes (safer) or keep quizzing the older one (more continuity)? FR-15 default is suppress; confirm.</li>
+<li><strong>Retention of raw audio</strong> — keep every Recording forever, or age out the Blob after N months once Transcripts are stable (Blob lifecycle tiering could also just move it to cool/archive storage cheaply)? FR-2/FR-20 currently assume forever.</li>
+<li><strong>What counts as a real Follow-up</strong> — the line between "I wonder about X" (skip) and "I need to check X" (track) needs a written rubric with examples. Hand-label ~5 recordings for ground truth (FR-40).</li>
+<li><strong>External to-do sync</strong> — should Action Items push to Apple Reminders / a calendar so they surface where the user already looks? Assumed no for v1; revisit for v1.1.</li>
+<li><strong>Consecutive-<code>partial</code> threshold</strong> — how many consecutive <code>partial</code> grades on a KU should spawn a Revisit item (FR-41)? Default assumption: 2.</li>
+<li>~~<strong>Azure region</strong>~~ — <strong>RESOLVED: Southeast Asia (Singapore).</strong> Foundry chat models are available there; Azure OpenAI Whisper is not (→ use Azure AI Speech, which is).</li>
+<li>~~<strong>Web auth mechanism</strong>~~ — <strong>RESOLVED: Easy Auth</strong> (App Service / Functions built-in auth, Entra ID), locked to one identity via "assignment required" + a principal check in middleware (FR-46).</li>
+<li>~~<strong>Chat model in Southeast Asia</strong>~~ — <strong>RESOLVED: deployable</strong> (Regional/DataZone, usable quota). v1 default is a GPT-4.1-class Regional deployment; the exact deployment name goes in <code>config.toml</code> <code>[llm].default_deployment</code> at provisioning. Choosing Claude instead, or DataZone, is a config change.</li>
+<li><strong>Dev/test terms risk</strong> — the VS credit is not licensed for production. Serverless-first mitigates but does not eliminate this. Decide whether to accept the grey area for a personal app or move to pay-as-you-go (~$60–90/mo) before any real reliance.</li>
+</ol>
+<h2 id="9-assumptions-index">9. Assumptions Index</h2>
+<ul>
+<li>§0, §2.2 — Single user; the web app authenticates exactly one identity.</li>
+<li>§0, §5.2 — <strong>DECIDED:</strong> hosted on Azure in <strong>Southeast Asia</strong>, serverless-first (Functions / Container Apps), PostgreSQL Flexible Server, Blob, AI Foundry (chat), AI Speech (STT), Key Vault — in the user's own subscription.</li>
+<li>§0, §5.2 — <strong>DECIDED:</strong> funded by the Visual Studio Enterprise (MCT) credit, $150/month. Dev/test-only terms; hard cap → subscription disables on overrun. Serverless-first and FR-53 exist because of this.</li>
+<li>§0, §4.1 — <strong>DECIDED:</strong> recordings enter only by manual upload through the web app; no folder watch or device sync.</li>
+<li>§4.1 — Recordings are m4a/mp3/wav exported from Voice Memos; per-file size cap configured.</li>
+<li>§4.1 — Transcription uses Azure AI Speech (Whisper model), available in Southeast Asia; Azure OpenAI Whisper is not in that region.</li>
+<li>§4.1 — English only for v1.</li>
+<li>§4.10 — Serverless compute scaling to zero where possible; Postgres is the one always-billing component; the daily quiz is timer-triggered.</li>
+<li>§5.1 / §5.2 — <strong>DECIDED:</strong> the daily quiz is a Telegram bot; everything else is in the web app. Questions and Answers transit Telegram; no other data does.</li>
+<li>§5.1 — Recordings are single-speaker (the user); no diarization in v1.</li>
+<li>§5.1 — The to-do list lives inside Quizme only; no external task/calendar integration in v1.</li>
+<li>§5.2 — <strong>DECIDED (top model everywhere):</strong> a top-tier Foundry model serves every LLM stage; high-volume low-judgment stages can be downgraded per-stage in config if the budget tightens.</li>
+<li>§5.2 — All inference is via Foundry / AI Speech deployments in the user's Azure tenant; no third-party consumer model API.</li>
+<li>§5.2 — <strong>CONFIRMED:</strong> a top-tier chat model is deployable in Southeast Asia. v1 default: GPT-4.1-class Regional deployment (inference stays in Singapore).</li>
+<li>§5.2 — Running cost must stay within the monthly credit; the system tracks spend, warns, and throttles paid work before the hard cap (FR-38, FR-53).</li>
+<li>§5.2 — Web auth is Easy Auth (Entra), locked to one identity.</li>
+<li>§5.2, §6.2 — A fully-local deployment (Ollama + local whisper + SQLite) is the documented exit for credit-lapse; the KB is exportable on demand; it is not built in v1.</li>
+<li>§4.11 — A <code>missed</code> grade always spawns a Revisit item; the consecutive-<code>partial</code> threshold defaults to 2.</li>
+<li>§6.2 — v1 relies on Azure's managed backups for Postgres and Blob; no custom DR automation.</li>
+</ul>
+</main>
+</div>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "neutral", securityLevel: "loose" });
+</script>
+</body>
+</html>

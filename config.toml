@@ -1,0 +1,57 @@
+# Non-secret defaults. Per-environment values come from App settings / env vars.
+# Secrets NEVER go here — they live in Azure Key Vault (AD-17).
+# Local overrides: config.local.toml (gitignored).
+
+[app]
+region = "southeastasia"
+timezone = "Asia/Singapore"
+
+[ingest]
+# FR-1 / FR-47
+allowed_formats = ["m4a", "mp3", "wav"]
+max_file_mb = 200
+language = "en"                       # FR-3, English only for v1
+
+[llm]
+# AD-8: one default deployment + per-stage overrides. AD-13: Foundry, not a consumer API.
+endpoint = "https://<your-foundry-resource>.openai.azure.com"
+api_version = "2025-01-01-preview"
+default_deployment = "gpt-4.1"        # top-tier everywhere for v1 (PRD §5.2)
+deployment_type = "regional"          # regional | datazone — never "global" (AD-13)
+temperature = 0.0
+
+# Per-stage overrides — point cheap stages elsewhere if the budget tightens (FR-53).
+[llm.stages]
+# filter = "gpt-4.1-mini"
+# followups = "gpt-4.1-mini"
+
+[llm.consolidation]
+# AD-15: only auto-merge above this confidence; below it, propose via Review Queue.
+merge_confidence_threshold = 0.80
+retrieval_neighbours = 6              # AD-6 bound
+
+[transcription]
+# Azure AI Speech (Whisper model) — available in southeastasia; Azure OpenAI Whisper is not.
+mode = "batch"                        # batch | fast
+model = "whisper"
+
+[embeddings]
+deployment = "text-embedding-3-small"
+dimensions = 1536
+
+[quiz]
+# FR-24 / FR-28
+send_time_local = "07:30"
+max_questions_per_day = 10
+retrievability_threshold = 0.90
+partial_streak_for_revisit = 2       # FR-41, PRD Open Q 10
+
+[budget]
+# FR-38 / FR-53 / AD-19. Credit is VS Enterprise $150/mo, hard cap.
+monthly_credit_usd = 150
+warn_at_pct = 60
+throttle_at_pct = 80                  # above this, hold new ingestion (AD-19)
+
+[review]
+suppress_contradicted_kus_from_quiz = true   # FR-15 default
+followup_confidence_threshold = 0.65         # FR-40, below → Review Queue

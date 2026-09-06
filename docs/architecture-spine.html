@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quizme — Architecture Spine</title>
+<style>
+  :root {
+    --bg: #fbfbfa; --fg: #1f2328; --muted: #6a737d; --border: #e3e3e0;
+    --card: #ffffff; --accent: #3b5bdb; --code-bg: #f4f4f2; --shadow: rgba(0,0,0,.05);
+    --th-bg: #f4f4f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16171a; --fg: #e6e6e3; --muted: #9aa0a6; --border: #2c2e33;
+      --card: #1e1f23; --accent: #91a7ff; --code-bg: #24262b; --shadow: rgba(0,0,0,.3);
+      --th-bg: #24262b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 0; max-width: 1240px; margin: 0 auto; }
+  nav.toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 28px 20px 60px; border-right: 1px solid var(--border); font-size: 13.5px;
+  }
+  nav.toc .doc-switch {
+    display: inline-block; margin-bottom: 16px; padding: 5px 10px; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 12.5px;
+  }
+  nav.toc .doc-switch:hover { background: var(--card); }
+  nav.toc ul { list-style: none; padding-left: 0; margin: 0; }
+  nav.toc li { margin: 1px 0; }
+  nav.toc a { color: var(--muted); text-decoration: none; display: block; padding: 3px 8px; border-radius: 5px; }
+  nav.toc a:hover { color: var(--fg); background: var(--card); }
+  nav.toc .toc-h3 { padding-left: 20px; font-size: 12.5px; }
+  nav.toc .toc-h4 { padding-left: 34px; font-size: 12px; opacity: .8; }
+  main { padding: 40px 52px 120px; min-width: 0; }
+  main > h1:first-child { margin-top: 0; }
+  h1, h2, h3, h4 { line-height: 1.28; font-weight: 680; scroll-margin-top: 20px; }
+  h1 { font-size: 2rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.42rem; margin-top: 2.4em; padding-bottom: .3em; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.13rem; margin-top: 1.8em; }
+  h4 { font-size: 1rem; margin-top: 1.5em; color: var(--fg); }
+  h4 code { font-size: .95em; }
+  a { color: var(--accent); }
+  p, li { overflow-wrap: anywhere; }
+  code {
+    background: var(--code-bg); padding: .12em .38em; border-radius: 4px;
+    font: .87em/1.5 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  pre {
+    background: var(--code-bg); padding: 16px 18px; border-radius: 8px; overflow-x: auto;
+    border: 1px solid var(--border); font-size: 13px;
+  }
+  pre code { background: none; padding: 0; }
+  pre.mermaid { background: var(--card); text-align: center; line-height: 1.4; }
+  table { border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: 14px; display: block; overflow-x: auto; }
+  th, td { border: 1px solid var(--border); padding: 8px 11px; text-align: left; vertical-align: top; }
+  th { background: var(--th-bg); font-weight: 640; }
+  blockquote {
+    margin: 1.2em 0; padding: .4em 1.1em; border-left: 3px solid var(--accent);
+    background: var(--card); color: var(--muted); border-radius: 0 6px 6px 0;
+  }
+  blockquote p { margin: .4em 0; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.4em 0; }
+  .frontmatter {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin: 0 0 28px; font-size: 12.5px; color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-x: auto;
+  }
+  .tag { display:inline-block; background: var(--code-bg); border:1px solid var(--border); border-radius:4px;
+          padding:0 5px; font-size:.8em; color: var(--muted); }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 28px 22px 80px; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    .wrap { display: block; }
+    main { padding: 0; }
+    pre, table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+  <a class="doc-switch" href="prd.html">&rarr; PRD</a>
+  <ul><li><a class="" href="#architecture-spine-quizme">Architecture Spine — Quizme</a><ul><li><a class="" href="#design-paradigm">Design Paradigm</a></li><li><a class="" href="#invariants-rules">Invariants &amp;amp; Rules</a><ul><li><a class="toc-h3" href="#ad-1-raw-artifacts-are-immutable-and-retained-adopted-from-prd-fr-2-fr-20">AD-1 — Raw artifacts are immutable and retained (ADOPTED — from PRD FR-2, FR-20)</a></li><li><a class="toc-h3" href="#ad-2-knowledge-units-are-the-only-source-of-truth-topic-notes-are-always-derived">AD-2 — Knowledge Units are the only source of truth; Topic Notes are always derived</a></li><li><a class="toc-h3" href="#ad-3-the-knowledge-base-is-a-projection-of-an-append-only-ku-operation-log">AD-3 — The knowledge base is a projection of an append-only KU Operation log</a></li><li><a class="toc-h3" href="#ad-4-pipeline-stages-are-idempotent-keyed-by-content-hash-stage-version">AD-4 — Pipeline stages are idempotent, keyed by content hash + stage version</a></li><li><a class="toc-h3" href="#ad-5-provenance-is-union-only">AD-5 — Provenance is union-only</a></li><li><a class="toc-h3" href="#ad-6-consolidation-is-always-scoped-no-whole-corpus-llm-pass">AD-6 — Consolidation is always scoped; no whole-corpus LLM pass</a></li><li><a class="toc-h3" href="#ad-7-contradictions-are-never-auto-resolved">AD-7 — Contradictions are never auto-resolved</a></li><li><a class="toc-h3" href="#ad-8-all-model-access-goes-through-one-port-with-model-prompt-pinned-in-versioned-config">AD-8 — All model access goes through one port, with model + prompt pinned in versioned config</a></li><li><a class="toc-h3" href="#ad-13-inference-and-data-stay-within-the-users-azure-tenant-adopted-user-decision-azure-hosting-vs-enterprise-150mo-credit">AD-13 — Inference and data stay within the user&#x27;s Azure tenant (ADOPTED — user decision: Azure hosting, VS Enterprise $150/mo credit)</a></li><li><a class="toc-h3" href="#ad-14-withdrawn">AD-14 — (withdrawn)</a></li><li><a class="toc-h3" href="#ad-15-consolidation-is-biased-toward-under-merging">AD-15 — Consolidation is biased toward under-merging</a></li><li><a class="toc-h3" href="#ad-16-recording-intake-is-upload-triggered-and-asynchronous">AD-16 — Recording intake is upload-triggered and asynchronous</a></li><li><a class="toc-h3" href="#ad-17-all-durable-state-is-in-managed-storage-the-app-filesystem-is-ephemeral">AD-17 — All durable state is in managed storage; the app filesystem is ephemeral</a></li><li><a class="toc-h3" href="#ad-18-the-system-stays-exportable-and-re-hostable">AD-18 — The system stays exportable and re-hostable</a></li><li><a class="toc-h3" href="#ad-19-degrade-before-the-credit-cap-adopted-visual-studio-credit-is-a-hard-cap">AD-19 — Degrade before the credit cap (ADOPTED — Visual Studio credit is a hard cap)</a></li><li><a class="toc-h3" href="#ad-9-scheduling-retention-state-is-owned-by-the-quiz-scheduler-and-is-not-knowledge">AD-9 — Scheduling / retention state is owned by the quiz scheduler and is not knowledge</a></li><li><a class="toc-h3" href="#ad-10-single-user-authentication-at-the-platform-edge-adopted-from-prd-22-412">AD-10 — Single user; authentication at the platform edge (ADOPTED — from PRD §2.2, §4.12)</a></li><li><a class="toc-h3" href="#ad-11-dependency-direction-adapters-application-domain">AD-11 — Dependency direction: adapters → application → domain</a></li><li><a class="toc-h3" href="#ad-12-action-items-are-tracked-task-state-not-knowledge">AD-12 — Action Items are tracked task state, not knowledge</a></li></ul></li><li><a class="" href="#consistency-conventions">Consistency Conventions</a></li><li><a class="" href="#stack">Stack</a></li><li><a class="" href="#structural-seed">Structural Seed</a><ul><li><a class="toc-h3" href="#container-deployment-view">Container / deployment view</a></li><li><a class="toc-h3" href="#core-entities-erd-names-relationships-only">Core entities (ERD — names + relationships only)</a></li><li><a class="toc-h3" href="#ingestion-pipeline-pipes-and-filters">Ingestion pipeline (pipes-and-filters)</a></li><li><a class="toc-h3" href="#source-tree">Source tree</a></li></ul></li><li><a class="" href="#capability-architecture-map">Capability → Architecture Map</a></li><li><a class="" href="#deferred">Deferred</a></li></ul></li></ul>
+</nav>
+<main>
+<div class="frontmatter">name: Quizme
+type: architecture-spine
+purpose: build-substrate
+altitude: initiative
+paradigm: hexagonal core + pipes-and-filters ingestion pipeline + append-only operation log
+scope: The whole Quizme system — web app, upload ingestion, transcription, knowledge base, consolidation engine, quiz/retention loop, action items, delivery — deployed on Azure.
+status: draft
+created: 2026-09-06
+updated: 2026-09-06
+binds: [FR-1..FR-52]
+sources: [docs/prd.md]
+companions: [docs/prd.md]</div>
+<h1 id="architecture-spine-quizme">Architecture Spine — Quizme</h1>
+<h2 id="design-paradigm">Design Paradigm</h2>
+<p><strong>Hexagonal (ports &amp; adapters) core, fed by a pipes-and-filters ingestion pipeline, with the knowledge base stored as an append-only operation log that is folded into current state.</strong></p>
+<ul>
+<li><strong>Domain</strong> — pure logic, no I/O: the KU model, consolidation policy (how an LLM verdict becomes KU Operations), the FSRS wrapper, question/quiz selection rules, Action Item lifecycle + dedup-key rules, the log-fold. Depends on nothing external.</li>
+<li><strong>Application</strong> — orchestrates the ingestion pipeline as discrete idempotent stages (<code>transcribe → filter → extract → consolidate → project → regenerate-notes</code>), plus the <code>quiz</code>, <code>grade</code>, <code>action-items</code>, and <code>review-queue</code> flows, and the <code>export</code> job. Extraction emits two outputs: KUs and candidate Follow-up Action Items; grading emits Revisit Action Items.</li>
+<li><strong>Adapters</strong> — implement ports defined by the core:</li>
+<li><code>RecordingIntake</code> — the web upload handler + Azure Blob (immutable object store) + Azure Storage Queue (pipeline trigger).</li>
+<li><code>Transcriber</code> — <strong>Azure AI Speech</strong> batch / fast transcription (Whisper model), available in Southeast Asia (Azure OpenAI Whisper is not — AD-13).</li>
+<li><code>LLM</code> — Azure AI Foundry chat deployment (OpenAI-compatible), default model + per-stage overrides pinned in config (AD-8).</li>
+<li><code>Embedder</code> — a Foundry embeddings deployment (or a small in-process model); vectors stored in Postgres <code>pgvector</code>.</li>
+<li><code>Store</code> — Azure Database for PostgreSQL Flexible Server (op-log, KUs, Cards, Action Items, Review Queue, run history) + Blob (audio, transcripts).</li>
+<li><code>Delivery</code> — Telegram bot (webhook) for the daily quiz.</li>
+<li><code>WebApp</code> — FastAPI (ASGI) app: the authenticated UI + JSON API over the application layer (AD-10).</li>
+<li><code>Clock</code>, <code>Scheduler</code> (timer for the daily quiz), <code>SpendMeter</code> (FR-38, FR-53).</li>
+<li><strong>Serverless-first, three trigger types (AD-16, AD-17, AD-19):</strong> an <strong>HTTP function/app</strong> (FastAPI ASGI — UI, JSON API, Telegram webhook), a <strong>timer function</strong> (daily quiz build + push; spend projection), and a <strong>queue-triggered worker</strong> (drains <code>ingest</code>, runs the pipeline). All scale to zero between work; none calls another in-process — they share only Postgres + the queue. Postgres Flexible Server (Burstable) is the sole always-billing component. Hostable on Azure Functions (Flex Consumption) or Container Apps (min-replicas 0); App Service is the fallback but conflicts with the dev/test credit terms (see Deferred).</li>
+</ul>
+<p>Directory ↔ layer mapping is in <strong>Structural Seed</strong>.</p>
+<h2 id="invariants-rules">Invariants &amp; Rules</h2>
+<h3 id="ad-1-raw-artifacts-are-immutable-and-retained-adopted-from-prd-fr-2-fr-20">AD-1 — Raw artifacts are immutable and retained <em>(ADOPTED — from PRD FR-2, FR-20)</em></h3>
+<ul>
+<li><strong>Binds:</strong> ingestion, transcription, storage; all rebuild paths.</li>
+<li><strong>Prevents:</strong> losing the ability to rebuild the knowledge base when filter/extraction/consolidation logic improves; irrecoverable data loss.</li>
+<li><strong>Rule:</strong> Recording originals and Transcripts are written once to content-addressed storage and never mutated or deleted by any pipeline stage. The system must be able to reconstruct the entire knowledge base from <code>{Recordings + Transcripts}</code> alone.</li>
+</ul>
+<h3 id="ad-2-knowledge-units-are-the-only-source-of-truth-topic-notes-are-always-derived">AD-2 — Knowledge Units are the only source of truth; Topic Notes are always derived</h3>
+<ul>
+<li><strong>Binds:</strong> knowledge base, Topic Notes, extraction, quiz, search.</li>
+<li><strong>Prevents:</strong> two divergent representations of the same knowledge; a hand-edit to a note being silently lost.</li>
+<li><strong>Rule:</strong> No process may read a Topic Note as input to another process. Topic Notes are regenerated from live KUs and are display-only. Any edit intent targets the KU layer via a KU Operation (AD-3).</li>
+</ul>
+<h3 id="ad-3-the-knowledge-base-is-a-projection-of-an-append-only-ku-operation-log">AD-3 — The knowledge base is a projection of an append-only KU Operation log</h3>
+<ul>
+<li><strong>Binds:</strong> consolidation, manual edits, storage, rebuild.</li>
+<li><strong>Prevents:</strong> irreversible LLM merges; inability to audit why knowledge changed; divergence between "what the engine did" and "what the KB shows".</li>
+<li><strong>Rule:</strong> Every knowledge change (<code>create</code>, <code>merge</code>, <code>elaborate</code>, <code>flag_contradiction</code>, <code>split</code>, <code>archive</code>, <code>edit</code>, <code>retopic</code>) is appended as one KU Operation carrying: actor (<code>engine</code> | <code>user</code>), timestamp, model id + prompt version + prompt hash (if LLM-driven), input KU ids, rationale. Live KB state = deterministic fold of the log. Superseded KUs are tombstoned (id retained, pointer to survivor), never row-deleted.</li>
+</ul>
+<h3 id="ad-4-pipeline-stages-are-idempotent-keyed-by-content-hash-stage-version">AD-4 — Pipeline stages are idempotent, keyed by content hash + stage version</h3>
+<ul>
+<li><strong>Binds:</strong> every ingestion pipeline stage; the queue worker.</li>
+<li><strong>Prevents:</strong> duplicate KUs from re-processing the same Recording; corruption from partial failures, retries, and at-least-once queue delivery.</li>
+<li><strong>Rule:</strong> Before running, a stage checks <code>(input_hash, stage_version)</code> against a processed-ledger in Postgres; if present, it is a no-op. A stage-version bump (prompt/model/logic change) is the <em>only</em> way to force reprocessing. Stages must be safe to kill and re-run at any point. Because the Storage Queue delivers <strong>at least once</strong>, every worker handler is idempotent on the message's Recording id and does not rely on exactly-once semantics.</li>
+</ul>
+<h3 id="ad-5-provenance-is-union-only">AD-5 — Provenance is union-only</h3>
+<ul>
+<li><strong>Binds:</strong> consolidation, manual merge.</li>
+<li><strong>Prevents:</strong> losing the trail from a KU back to every Recording span that supports it.</li>
+<li><strong>Rule:</strong> On any merge or elaboration, the survivor's <code>sources</code> is the set union of all inputs' Sources. No operation removes a Source except an explicit user <code>edit</code> op (PRD FR-35), and a KU with zero Sources must be archived.</li>
+</ul>
+<h3 id="ad-6-consolidation-is-always-scoped-no-whole-corpus-llm-pass">AD-6 — Consolidation is always scoped; no whole-corpus LLM pass</h3>
+<ul>
+<li><strong>Binds:</strong> consolidation engine, per-Topic reorganization.</li>
+<li><strong>Prevents:</strong> unbounded cost; nondeterministic mass rewrites; context-window failures as the KB grows.</li>
+<li><strong>Rule:</strong> An LLM consolidation call receives at most <strong>one Recording's candidate KUs plus their top-k retrieval neighbors</strong>, or <strong>one Topic's KUs</strong>. Never more. Retrieval bound <code>k</code> and Topic-reorg trigger threshold are config.</li>
+</ul>
+<h3 id="ad-7-contradictions-are-never-auto-resolved">AD-7 — Contradictions are never auto-resolved</h3>
+<ul>
+<li><strong>Binds:</strong> consolidation, Review Queue, quiz selection.</li>
+<li><strong>Prevents:</strong> silently overwriting the user's knowledge with a wrong "correction"; the engine acting as an authority it is not.</li>
+<li><strong>Rule:</strong> A <code>contradiction</code> verdict produces a <code>flag_contradiction</code> op and a Review Queue item holding both KUs intact. Neither KU is edited, merged, or archived until a <code>user</code>-actor op resolves it. Both are suppressed from quizzes while the flag is open (config-overridable).</li>
+</ul>
+<h3 id="ad-8-all-model-access-goes-through-one-port-with-model-prompt-pinned-in-versioned-config">AD-8 — All model access goes through one port, with model + prompt pinned in versioned config</h3>
+<ul>
+<li><strong>Binds:</strong> every LLM and STT use (filter, extract, consolidate, follow-up detection, question generation, grade, note-regen).</li>
+<li><strong>Prevents:</strong> silent model drift changing KB behavior; per-stage prompt sprawl; untraceable outputs; uncontrolled spend.</li>
+<li><strong>Rule:</strong> A single <code>LLM</code> port (Azure Foundry chat deployment) and a single <code>Transcriber</code> port (Azure AI Speech). Config has one default chat model plus <strong>per-stage overrides</strong>: v1 runs a top-tier model everywhere, but a stage can be pointed at a cheaper deployment without code change (budget lever, PRD §5.2, FR-53). Per-stage differences are <code>{deployment, sampling params, prompt template}</code>, each addressed by a <code>prompt_version</code>. Every call logs <code>{prompt_version, prompt_hash, model, input_tokens, output_tokens, latency_ms, est_cost_usd}</code> and feeds <code>SpendMeter</code> (FR-38). Changing deployment / params / template bumps the dependent stage version (AD-4).</li>
+</ul>
+<h3 id="ad-13-inference-and-data-stay-within-the-users-azure-tenant-adopted-user-decision-azure-hosting-vs-enterprise-150mo-credit">AD-13 — Inference and data stay within the user's Azure tenant <em>(ADOPTED — user decision: Azure hosting, VS Enterprise $150/mo credit)</em></h3>
+<ul>
+<li><strong>Binds:</strong> every <code>LLM</code>, <code>Transcriber</code>, <code>Embedder</code>, and <code>Store</code> use.</li>
+<li><strong>Prevents:</strong> personal study content going to a third-party consumer model API; data spread across providers; vendor lock-in that blocks the credit-lapse exit.</li>
+<li><strong>Rule:</strong> All model calls target <strong>Azure AI Foundry / Azure AI Speech deployments in the user's own subscription</strong> (region <strong>Southeast Asia</strong>); no <code>api.openai.com</code> / <code>api.anthropic.com</code> / other consumer endpoints. All persistent data lives in the user's Azure Postgres and Blob. The only outbound traffic outside Azure is the <code>Delivery</code> adapter to Telegram (PRD §5.2), carrying generated Questions, model answers, and user Answers only — never audio, Transcripts, Sources, Topic Notes, or the KB. The op-log and export format carry no Azure-proprietary types, so AD-18's local fallback stays viable.</li>
+<li><strong>Model-region facts:</strong> transcription is Azure AI Speech because Azure OpenAI Whisper is not in Southeast Asia. A top-tier chat model <strong>is</strong> deployable in Southeast Asia (confirmed) — v1 uses a <strong>Regional</strong> deployment there (inference stays in Singapore). If a later model choice needs a <strong>DataZone</strong> deployment, that keeps data in the geo; never use a <strong>Global</strong> deployment for the pipeline (routes anywhere, breaks residency). Pick the deployment type explicitly per model.</li>
+</ul>
+<h3 id="ad-14-withdrawn">AD-14 — <em>(withdrawn)</em></h3>
+<p>Previously: "STT and LLM inference are never co-resident" — a memory-budget rule for the 16 GB local-Mac deployment. Obsolete on Azure, where transcription and LLM calls are separate managed endpoints with no shared memory. The <code>resource_class</code> tag is dropped. <strong>ID retained, not reused.</strong></p>
+<h3 id="ad-15-consolidation-is-biased-toward-under-merging">AD-15 — Consolidation is biased toward under-merging</h3>
+<ul>
+<li><strong>Binds:</strong> consolidation policy (<code>domain/consolidation.py</code>).</li>
+<li><strong>Prevents:</strong> a confident-but-wrong <code>duplicate</code> / <code>elaboration</code> verdict collapsing distinct KUs and losing information that is hard to recover in practice.</li>
+<li><strong>Rule:</strong> A <code>duplicate</code> or <code>elaboration</code> verdict auto-applies <strong>only</strong> above a configured confidence threshold; below it, the new KU is inserted as <code>create</code> and a low-priority Review Queue item proposes the merge. <code>contradiction</code> always goes to the queue (AD-7). This is defense-in-depth (an un-merged duplicate is cheaply fixed later by FR-16 or a manual merge; an over-merge is not), independent of how capable the model is.</li>
+</ul>
+<h3 id="ad-16-recording-intake-is-upload-triggered-and-asynchronous">AD-16 — Recording intake is upload-triggered and asynchronous</h3>
+<ul>
+<li><strong>Binds:</strong> <code>RecordingIntake</code>, the web process, the queue worker.</li>
+<li><strong>Prevents:</strong> a slow pipeline blocking the HTTP upload; a Recording lost because processing failed after the request returned; the web and worker processes coupling in-process.</li>
+<li><strong>Rule:</strong> The web process, on upload, (1) streams the file to Blob, (2) computes its content hash and creates the Recording row (or detects the duplicate), (3) enqueues one Storage Queue message per new Recording, then returns success. Blob write + Recording row + enqueue is the acceptance boundary — after it, the file is safe even if the worker is down. The <strong>worker never reads from the web process and the web process never runs a pipeline stage</strong>; they communicate only through Postgres + the queue.</li>
+</ul>
+<h3 id="ad-17-all-durable-state-is-in-managed-storage-the-app-filesystem-is-ephemeral">AD-17 — All durable state is in managed storage; the app filesystem is ephemeral</h3>
+<ul>
+<li><strong>Binds:</strong> every component.</li>
+<li><strong>Prevents:</strong> data loss on App Service restart / redeploy / scale; SQLite-style single-file fragility; logs vanishing on redeploy.</li>
+<li><strong>Rule:</strong> Nothing durable is written to local disk. The op-log, KUs, Cards, Action Items, Review Queue, run history, and <code>SpendMeter</code> totals live in Postgres; audio and transcripts in Blob; embeddings in <code>pgvector</code>. Schema changes are forward-only migrations applied on deploy. Logs and metrics go to Azure (App Insights / Log Analytics), not files.</li>
+</ul>
+<h3 id="ad-18-the-system-stays-exportable-and-re-hostable">AD-18 — The system stays exportable and re-hostable</h3>
+<ul>
+<li><strong>Binds:</strong> <code>Store</code>, <code>LLM</code>, <code>Transcriber</code>, <code>Embedder</code> ports; the <code>export</code> job.</li>
+<li><strong>Prevents:</strong> the temporary Azure credits becoming a lock-in that makes moving back to local infeasible.</li>
+<li><strong>Rule:</strong> An on-demand <code>export</code> produces a portable bundle: a Postgres logical dump (standard SQL, <code>pgvector</code> values as arrays) + a Blob manifest + the config. Every port has a documented local implementation path (<code>LLM</code>→Ollama, <code>Transcriber</code>→whisper.cpp, <code>Store</code>→SQLite + sqlite-vec, <code>Embedder</code>→local model). No domain or op-log type may depend on an Azure SDK class. Building and testing the local deployment is deferred (PRD §6.2) but must never be <em>designed out</em>.</li>
+</ul>
+<h3 id="ad-19-degrade-before-the-credit-cap-adopted-visual-studio-credit-is-a-hard-cap">AD-19 — Degrade before the credit cap <em>(ADOPTED — Visual Studio credit is a hard cap)</em></h3>
+<ul>
+<li><strong>Binds:</strong> the timer function (spend projection), the queue worker, <code>SpendMeter</code>, <code>RecordingIntake</code>.</li>
+<li><strong>Prevents:</strong> the subscription's hard spending limit being hit mid-month, which <strong>disables all services</strong> — taking the daily quiz offline too, not just ingestion.</li>
+<li><strong>Rule:</strong> <code>SpendMeter</code> projects month-end spend after every run. Above a configured danger threshold the worker enters <strong>throttled</strong> mode: it stops dequeuing new ingestion work and skips the per-Topic reorg (FR-16), while the daily quiz, grading, and any in-flight Recording finish normally. Uploads are still accepted and stored to Blob (cheap) and their queue messages left for the next period. Throttle engage/clear is logged and pushed to Telegram (FR-53). The threshold and the monthly budget figure are user settings (FR-52).</li>
+</ul>
+<h3 id="ad-9-scheduling-retention-state-is-owned-by-the-quiz-scheduler-and-is-not-knowledge">AD-9 — Scheduling / retention state is owned by the quiz scheduler and is not knowledge</h3>
+<ul>
+<li><strong>Binds:</strong> quiz, grading, knowledge base.</li>
+<li><strong>Prevents:</strong> FSRS state coupling to or corrupting the KB; quiz generation writing into KUs.</li>
+<li><strong>Rule:</strong> FSRS Card state lives in its own store keyed by <code>ku_id</code>, owned solely by the quiz/grade flows. Quiz generation and grading read KUs <strong>read-only</strong>. Deleting all Card state must not affect the KB; rebuilding the KB must not silently discard Card history (Cards for tombstoned KUs are retired, not dropped).</li>
+</ul>
+<h3 id="ad-10-single-user-authentication-at-the-platform-edge-adopted-from-prd-22-412">AD-10 — Single user; authentication at the platform edge <em>(ADOPTED — from PRD §2.2, §4.12)</em></h3>
+<ul>
+<li><strong>Binds:</strong> entire system; <code>WebApp</code>, <code>Delivery</code>.</li>
+<li><strong>Prevents:</strong> premature multi-tenant complexity in schema and logic; application code re-implementing auth.</li>
+<li><strong>Rule:</strong> The core assumes one implicit identity — no user table, no per-row ownership. Two ingress points, each authenticating before application code runs: the <strong>web app</strong> behind built-in auth ("Easy Auth", Entra ID) — locked to one identity via <em>assignment required</em> on the enterprise app <strong>and</strong> an <code>oid</code>/<code>preferred_username</code> allowlist check in middleware (belt and braces) (FR-46) — and the <strong>Telegram webhook</strong> validated by <code>X-Telegram-Bot-Api-Secret-Token</code> + a hard allowlist of one chat id. No other inbound routes. A second user would be a new epic, not a v1 seam.</li>
+</ul>
+<h3 id="ad-11-dependency-direction-adapters-application-domain">AD-11 — Dependency direction: adapters → application → domain</h3>
+<ul>
+<li><strong>Binds:</strong> all modules.</li>
+<li><strong>Prevents:</strong> infrastructure concerns (SQLite, HTTP, file paths, vendor SDKs) leaking into domain logic; an untestable core.</li>
+<li><strong>Rule:</strong> <code>domain</code> imports no I/O library and no adapter. <code>application</code> imports <code>domain</code> and port <em>interfaces</em> only. <code>adapters</code> import <code>application</code>/<code>domain</code> to implement ports. Dependencies point inward only.</li>
+</ul>
+<h3 id="ad-12-action-items-are-tracked-task-state-not-knowledge">AD-12 — Action Items are tracked task state, not knowledge</h3>
+<ul>
+<li><strong>Binds:</strong> extraction (Follow-up detection), grading (Revisit creation), the Action Item service, knowledge base, Cards.</li>
+<li><strong>Prevents:</strong> to-do state coupling into the KU Operation log; duplicate items piling up from repeated triggers; a "done" checkbox silently altering the spaced-repetition schedule.</li>
+<li><strong>Rule:</strong> Action Items live in their own store keyed by <code>action_item_id</code>, owned solely by the Action Item service. Each has a dedup key — <code>("revisit", ku_id)</code> for Revisit items, <code>("follow_up", topic_id, intent_hash)</code> for Follow-ups — and creation is <strong>upsert on that key</strong> (<code>trigger_count++</code>, Sources unioned), never blind insert. KU Operations never reference Action Items; Action Items reference KUs / Sources / Topics <strong>read-only</strong>. Resolving or deleting an Action Item writes no KU Operation and touches no Card. The only automatic KB→ActionItem effect is the FR-45 read-only signals (KU answered <code>correct</code>×2 → auto-resolve; Topic gained KUs → "possibly addressed" flag).</li>
+</ul>
+<pre class="mermaid">graph TD
+    subgraph Adapters
+        WEB[WebApp: FastAPI UI + JSON API]
+        INTK[RecordingIntake: upload + Blob + Queue]
+        WH[Transcriber: Azure AI Speech]
+        CL[LLM: Foundry chat deployment]
+        EM[Embedder: Foundry / local]
+        TG[Delivery: Telegram bot webhook]
+        DB[Store: Postgres + pgvector, Blob]
+        SC[Scheduler: quiz timer]
+    end
+    subgraph Application
+        PIPE[Ingestion pipeline - worker]
+        QUIZ[Quiz + grade flows]
+        RQ[Review Queue service]
+        AI[Action Item service]
+        EXP[Export job]
+    end
+    subgraph Domain
+        KU[KU model + log-fold]
+        POL[Consolidation policy]
+        FSRS[FSRS wrapper]
+        SEL[Quiz selection rules]
+        AIL[Action Item lifecycle + dedup keys]
+    end
+    WEB --&gt; PIPE
+    WEB --&gt; RQ
+    WEB --&gt; AI
+    WEB --&gt; QUIZ
+    WEB --&gt; EXP
+    INTK --&gt; PIPE
+    WH --&gt; PIPE
+    CL --&gt; PIPE
+    EM --&gt; PIPE
+    PIPE --&gt; QUIZ
+    SC --&gt; QUIZ
+    TG --&gt; QUIZ
+    PIPE --&gt; AI
+    QUIZ --&gt; AI
+    PIPE --&gt; DB
+    QUIZ --&gt; DB
+    RQ --&gt; DB
+    AI --&gt; DB
+    EXP --&gt; DB
+    PIPE --&gt; KU
+    PIPE --&gt; POL
+    QUIZ --&gt; FSRS
+    QUIZ --&gt; SEL
+    RQ --&gt; KU
+    AI --&gt; AIL
+    KU -.no imports.-&gt; DOMAINONLY[ ]
+    style DOMAINONLY fill:none,stroke:none</pre>
+<h2 id="consistency-conventions">Consistency Conventions</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Convention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identifiers</td>
+<td>UUIDv7 (time-ordered) for all entity ids: <code>upload_id</code>, <code>recording_id</code>, <code>transcript_id</code>, <code>segment_id</code>, <code>ku_id</code>, <code>op_id</code>, <code>topic_id</code>, <code>card_id</code>, <code>quiz_id</code>, <code>question_id</code>, <code>review_item_id</code>, <code>action_item_id</code>. Blob object keys are <code>recordings/&lt;sha256&gt;</code> / <code>transcripts/&lt;recording_id&gt;.json</code>; the SHA-256 of the audio is also the dedup key on <code>recording</code>.</td>
+</tr>
+<tr>
+<td>Topic slug</td>
+<td>lowercase kebab-case, ASCII, generated from the Topic label; label is display, slug is the key.</td>
+</tr>
+<tr>
+<td>Dates &amp; times</td>
+<td>ISO 8601, UTC, stored as <code>TEXT</code> (<code>...Z</code>). Audio offsets are float seconds from recording start.</td>
+</tr>
+<tr>
+<td>Naming</td>
+<td>Entities singular PascalCase in code (<code>KnowledgeUnit</code>), snake_case tables/columns (<code>knowledge_unit</code>), verbs for pipeline stages (<code>extract</code>, <code>consolidate</code>). Ports are <code>XxxPort</code> protocols; adapters are <code>XxxAdapter</code>.</td>
+</tr>
+<tr>
+<td>KU Operation shape</td>
+<td><code>{op_id, ts, actor, type, ku_ids_in[], ku_id_out?, payload, model?, prompt_version?, prompt_hash?, rationale?}</code>. Append-only table; no <code>UPDATE</code>, no <code>DELETE</code>.</td>
+</tr>
+<tr>
+<td>Action Item shape</td>
+<td><code>{action_item_id, origin, status, dedup_key, trigger_text, sources[], ku_id?, topic_id?, trigger_count, revisit_at?, created_at, updated_at, resolved_at?, resolution?}</code>. <code>dedup_key</code> is unique; writes are upsert on it (AD-12). Status transitions are logged as <code>action_item_event</code> rows.</td>
+</tr>
+<tr>
+<td>Error shape</td>
+<td>Domain raises typed <code>QuizmeError</code> subclasses; adapters translate vendor errors at the boundary. Pipeline stage failures are caught, logged as a <code>stage_run</code> row with <code>status=failed</code> + traceback, retried with backoff, and parked after N attempts — never crash the worker (PRD FR-36).</td>
+</tr>
+<tr>
+<td>Queue handling</td>
+<td>Storage Queue = at-least-once; every worker handler is idempotent on <code>recording_id</code> (AD-4). Poison messages → dead-letter queue after N dequeues, surfaced in run history. Visibility timeout ≥ the longest stage.</td>
+</tr>
+<tr>
+<td>LLM call logging</td>
+<td>Every call → one <code>llm_call</code> row: <code>{ts, stage, prompt_version, prompt_hash, model, input_tokens, output_tokens, latency_ms, est_cost_usd, confidence?}</code>; totals roll up into <code>spend_month</code> (FR-38).</td>
+</tr>
+<tr>
+<td>Config</td>
+<td><code>config.toml</code> in the repo for non-secret defaults; per-environment values as App Service settings. <code>[llm]</code> pins the Foundry <code>endpoint</code> + default <code>deployment</code> + per-stage overrides + thresholds. <strong>Secrets only in Azure Key Vault, read via Managed Identity</strong> — never in env vars, never in the repo (AD-17).</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td>Web app behind App Service Easy Auth, one allowed identity; Telegram webhook validated by <code>X-Telegram-Bot-Api-Secret-Token</code> + single-chat-id allowlist (AD-10).</td>
+</tr>
+<tr>
+<td>Logging</td>
+<td>Structured logs to stdout → App Insights / Log Analytics; one <code>run_id</code> per pipeline or quiz run threaded through all lines; retained per Azure retention config, not on the app filesystem (AD-17).</td>
+</tr>
+<tr>
+<td>Determinism</td>
+<td>LLM sampling <code>temperature=0</code> (fixed <code>seed</code> where the deployment supports it) for filter/extract/consolidate/grade/follow-ups; question generation may use a low non-zero temperature. Structured output enforced via the model's JSON-schema / structured-output mode.</td>
+</tr>
+<tr>
+<td>Migrations</td>
+<td>Alembic, forward-only, numbered; applied on deploy before the new revision serves traffic.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="stack">Stack</h2>
+<p><em>Seed — verified current as of 2026-09-06; the code owns exact pins once it exists. Rationale in the conversation, not here.</em></p>
+<p><em>Seed — verified plausible as of 2026-09-06; confirm exact SKUs and prices in </em><em>Southeast Asia</em><em> at provisioning. Top-tier chat model confirmed deployable there. Rough all-in: ~$55–100/mo (PRD §5.2).</em></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Version / SKU / notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.12+</td>
+</tr>
+<tr>
+<td>uv (packaging)</td>
+<td>latest</td>
+</tr>
+<tr>
+<td>FastAPI (ASGI)</td>
+<td>latest — UI + JSON API + Telegram webhook; runs as the HTTP function/app</td>
+</tr>
+<tr>
+<td>Jinja2 (or htmx + minimal JS)</td>
+<td>server-rendered UI; keep the frontend thin (PRD FR-52 NFR)</td>
+</tr>
+<tr>
+<td><strong>Compute — serverless-first</strong></td>
+<td><strong>Azure Functions (Flex Consumption)</strong> or <strong>Azure Container Apps (min-replicas 0)</strong>: one HTTP app (FastAPI via ASGI/<code>azure-functions</code>), one timer trigger (daily quiz + spend projection), one Storage-Queue trigger (pipeline worker). Scale to zero between work (AD-16, AD-19). App Service B1 is the fallback — see Deferred.</td>
+</tr>
+<tr>
+<td><strong>Azure Database for PostgreSQL Flexible Server</strong></td>
+<td><strong>Burstable B1ms</strong> + ~32 GB storage + 7-day backups; <code>pgvector</code> enabled. The one always-billing component, ~$15–20/mo.</td>
+</tr>
+<tr>
+<td><strong>Azure Blob Storage</strong></td>
+<td>Standard, LRS, Hot; audio + transcripts; lifecycle rule to Cool after N days (PRD Open Q 7). &lt;$2/mo.</td>
+</tr>
+<tr>
+<td><strong>Azure Storage Queue</strong></td>
+<td>one queue <code>ingest</code>, one dead-letter; upload → pipeline trigger (AD-16).</td>
+</tr>
+<tr>
+<td><strong>Azure AI Foundry — chat deployment</strong></td>
+<td>one top-tier deployment as default <code>[llm].default_deployment</code> — a GPT-4.1-class <strong>Regional</strong> deployment in Southeast Asia (confirmed deployable). Never Global (AD-13). Per-stage overrides in config (AD-8).</td>
+</tr>
+<tr>
+<td><strong>Azure AI Speech</strong></td>
+<td>batch / fast transcription with the Whisper model; word + segment timestamps; available in Southeast Asia. Duration-billed (~$0.30–1.00/audio-hour by tier). Replaces the (region-unavailable) Azure OpenAI Whisper deployment.</td>
+</tr>
+<tr>
+<td><strong>Azure AI Foundry — embeddings deployment</strong></td>
+<td>a text-embedding model; dimension pinned in config. (Local model is the AD-18 fallback.)</td>
+</tr>
+<tr>
+<td><strong>Azure Key Vault</strong></td>
+<td>Telegram token + webhook secret, DB creds (prefer Entra auth to Postgres so there is no password), any keys; via <strong>Managed Identity</strong> (AD-17).</td>
+</tr>
+<tr>
+<td><strong>Azure Application Insights / Log Analytics</strong></td>
+<td>logs, traces, request metrics (AD-17).</td>
+</tr>
+<tr>
+<td>SQLAlchemy 2.x + Alembic</td>
+<td>ORM + forward-only migrations</td>
+</tr>
+<tr>
+<td><code>pgvector</code> Python bindings</td>
+<td>vector column type + KNN queries</td>
+</tr>
+<tr>
+<td>fsrs (<code>py-fsrs</code>)</td>
+<td>6.3.x</td>
+</tr>
+<tr>
+<td>python-telegram-bot</td>
+<td>22.x — <strong>webhook mode</strong></td>
+</tr>
+<tr>
+<td>openai (Python SDK) or <code>azure-ai-inference</code></td>
+<td>client for the Foundry endpoint</td>
+</tr>
+<tr>
+<td><code>azure-cognitiveservices-speech</code> / Speech batch REST</td>
+<td>client for AI Speech transcription</td>
+</tr>
+<tr>
+<td>pytest</td>
+<td>latest</td>
+</tr>
+<tr>
+<td>GitHub Actions → Functions/Container Apps</td>
+<td>deploy pipeline; Alembic upgrade as a release step</td>
+</tr>
+<tr>
+<td><em>(AD-18 fallback, not built in v1)</em> Ollama · whisper.cpp · SQLite + sqlite-vec · APScheduler</td>
+<td>the documented local re-host path</td>
+</tr>
+</tbody>
+</table>
+<h2 id="structural-seed">Structural Seed</h2>
+<h3 id="container-deployment-view">Container / deployment view</h3>
+<pre class="mermaid">graph TD
+    USER[User: phone / desktop browser]
+    subgraph AZ[&quot;Azure — user&#x27;s subscription, Southeast Asia&quot;]
+        subgraph SL[&quot;Serverless compute (scale to zero)&quot;]
+            HTTP[HTTP app\nFastAPI: UI + API + Telegram webhook]
+            TIMER[Timer\ndaily quiz + spend projection]
+            WORK[Queue worker\npipeline stages]
+        end
+        Q[(Storage Queue\ningest + dead-letter)]
+        BLOB[(Blob Storage\naudio + transcripts)]
+        PG[(PostgreSQL Flexible - Burstable\nop-log, KUs, cards,\nrun history, pgvector)]
+        subgraph FND[&quot;Azure AI&quot;]
+            CHAT[Foundry chat deployment]
+            SPEECH[AI Speech - Whisper]
+            EMB[embeddings deployment]
+        end
+        KV[Key Vault]
+        AI2[App Insights]
+    end
+    TG[Telegram servers]
+    USER --&gt;|Easy Auth| HTTP
+    HTTP --&gt;|store audio| BLOB
+    HTTP --&gt;|Recording row + enqueue| Q
+    HTTP --&gt; PG
+    Q --&gt; WORK
+    WORK --&gt; BLOB
+    WORK --&gt; PG
+    TIMER --&gt; PG
+    TIMER --&gt;|build quiz| CHAT
+    WORK --&gt;|transcribe| SPEECH
+    WORK --&gt;|filter/extract/consolidate/follow-ups/notes| CHAT
+    WORK --&gt;|embed| EMB
+    HTTP --&gt;|grade answers| CHAT
+    HTTP &lt;--&gt;|deliver quiz, receive answers| TG
+    TG --&gt;|webhook| HTTP
+    HTTP -.secrets.-&gt; KV
+    WORK -.secrets.-&gt; KV
+    HTTP --&gt; AI2
+    WORK --&gt; AI2
+    TIMER --&gt; AI2</pre>
+<p><em>Everything except the Telegram hop is inside the user's Azure tenant (AD-13). The Telegram hop carries Questions and Answers only.</em></p>
+<h3 id="core-entities-erd-names-relationships-only">Core entities (ERD — names + relationships only)</h3>
+<pre class="mermaid">erDiagram
+    Upload ||--o{ Recording : &quot;produced&quot;
+    Recording ||--|| Transcript : has
+    Transcript ||--o{ Segment : &quot;split into&quot;
+    Segment ||--o{ KnowledgeUnit : &quot;extracted (study only)&quot;
+    KnowledgeUnit ||--o{ Source : &quot;supported by&quot;
+    Source }o--|| Recording : &quot;points at span of&quot;
+    KnowledgeUnit }o--o{ Topic : &quot;tagged with&quot;
+    Topic ||--|| TopicNote : &quot;regenerated as&quot;
+    KUOperation }o--o{ KnowledgeUnit : &quot;creates / merges / archives&quot;
+    KnowledgeUnit ||--o| Card : &quot;scheduled by&quot;
+    Card ||--o{ Question : &quot;quizzed via&quot;
+    Quiz ||--o{ Question : contains
+    Question ||--o| Answer : &quot;answered by&quot;
+    Answer ||--|| Grade : &quot;evaluated as&quot;
+    ReviewItem }o--o{ KnowledgeUnit : &quot;about&quot;
+    Grade ||--o| ActionItem : &quot;missed → spawns Revisit&quot;
+    Segment ||--o{ ActionItem : &quot;follow-up intent → spawns Follow-up&quot;
+    ActionItem }o--o| KnowledgeUnit : &quot;links (read-only)&quot;
+    ActionItem }o--o| Topic : &quot;grouped under&quot;
+    ActionItem ||--o{ ActionItemEvent : &quot;status changes&quot;</pre>
+<h3 id="ingestion-pipeline-pipes-and-filters">Ingestion pipeline (pipes-and-filters)</h3>
+<pre class="mermaid">graph LR
+    U[web upload] --&gt; B[store blob + Recording row]
+    B --&gt; Q[enqueue]
+    Q --&gt; C[worker: transcribe → Transcript]
+    C --&gt; D[segment + classify study/noise]
+    D --&gt; E[extract atomic KUs + Sources]
+    D --&gt; L[detect Follow-up intents]
+    E --&gt; F[embed KUs]
+    F --&gt; G[retrieve neighbors + LLM adjudicate]
+    G --&gt; H[append KU Operations]
+    H --&gt; I[fold log → project live KB]
+    I --&gt; J[regenerate affected Topic Notes]
+    H --&gt; K[raise Review Queue items]
+    L --&gt; M[upsert Follow-up Action Items]
+    L -.low confidence.-&gt; K</pre>
+<p>Steps <code>U</code>→<code>Q</code> run in the <strong>web process</strong> (AD-16, synchronous, returns after enqueue). Steps <code>C</code>→<code>M</code> run in the <strong>worker</strong>, each idempotent (AD-4). Grade flow (web process, on Telegram answer): <code>answer graded</code> → <code>missed</code> → <code>upsert Revisit Action Item</code>; <code>correct</code>×2 on a linked KU → <code>auto-resolve Revisit item</code>.</p>
+<h3 id="source-tree">Source tree</h3>
+<pre><code class="language-text">quizme/
+  pyproject.toml
+  config.toml            # non-secret defaults only (AD-17)
+  quizme/
+    domain/              # AD-11 inner ring — no I/O, no Azure SDK (AD-18)
+      ku.py              # KnowledgeUnit, Source, KUOperation, log-fold
+      consolidation.py   # verdict -&gt; operations policy (AD-3, AD-5, AD-7, AD-15)
+      scheduling.py      # FSRS wrapper (AD-9)
+      selection.py       # daily quiz selection rules
+      action_items.py    # ActionItem model, dedup keys, lifecycle rules (AD-12)
+      errors.py
+    application/         # orchestration; imports domain + port protocols
+      ports.py           # RecordingIntake, Transcriber, LLM, Embedder, Store, Delivery, WebApp, Clock, Scheduler, SpendMeter
+      pipeline/          # one module per stage (AD-4 idempotent)
+        transcribe.py  filter.py  extract.py  followups.py  consolidate.py  project.py  notes.py
+      quiz.py            # generate + deliver + grade flows
+      review_queue.py
+      action_items.py    # upsert/dedup/lifecycle service (AD-12); FR-39..FR-45
+      queue_worker.py    # dequeue → run pipeline stages; idempotent per Recording (AD-16)
+      spend.py           # SpendMeter — rolls up llm_call rows; projection, warn, throttle (FR-38, FR-53, AD-19)
+      export.py          # portable bundle (AD-18); FR (§6.1)
+    adapters/
+      intake_azure.py    # RecordingIntake — upload handler + Blob + Queue (AD-16)
+      transcriber_speech.py    # Transcriber — Azure AI Speech batch/fast transcription (AD-13)
+      llm_foundry.py     # LLM — Foundry chat deployment, per-stage overrides (AD-8, AD-13)
+      embedder_foundry.py
+      store_postgres.py  # Store — Postgres + pgvector + Blob, isolated (AD-3, AD-9, AD-17)
+      delivery_telegram.py     # Delivery — bot webhook (AD-10)
+      # AD-18 fallback stubs, not wired in v1:
+      llm_ollama.py  transcriber_whisper_cpp.py  store_sqlite.py  embedder_local.py
+    web/                 # WebApp adapter — FastAPI
+      app.py  auth.py    # Easy Auth + principal allowlist (AD-10)
+      routes/            # upload, ingestion status, review queue, browse, todo, retention/settings
+      templates/  static/
+    prompts/             # versioned templates; filename carries prompt_version
+    migrations/          # Alembic, forward-only
+  functions/             # serverless host: HTTP (→ web/app ASGI), timer (quiz + spend), queue (→ application/queue_worker)
+  infra/                 # provisioning scripts / Bicep (deferred depth — see Deferred)
+  .github/workflows/     # deploy → Functions/Container Apps, run Alembic
+  tests/
+</code></pre>
+<h2 id="capability-architecture-map">Capability → Architecture Map</h2>
+<table>
+<thead>
+<tr>
+<th>Capability / FR</th>
+<th>Lives in</th>
+<th>Governed by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-1..FR-4 upload ingestion &amp; transcription</td>
+<td><code>adapters/intake_azure.py</code>, <code>adapters/transcriber_speech.py</code>, <code>application/pipeline/transcribe.py</code>, <code>application/queue_worker.py</code></td>
+<td>AD-1, AD-4, AD-8, AD-13, AD-16, AD-17</td>
+</tr>
+<tr>
+<td>FR-5..FR-7 relevance filtering</td>
+<td><code>application/pipeline/filter.py</code>, <code>prompts/</code></td>
+<td>AD-4, AD-8, AD-13</td>
+</tr>
+<tr>
+<td>FR-8..FR-10 extraction</td>
+<td><code>application/pipeline/extract.py</code>, <code>domain/ku.py</code></td>
+<td>AD-4, AD-5, AD-8, AD-13</td>
+</tr>
+<tr>
+<td>FR-11..FR-16 consolidation</td>
+<td><code>application/pipeline/consolidate.py</code>, <code>domain/consolidation.py</code></td>
+<td>AD-3, AD-5, AD-6, AD-7, AD-8, AD-13, AD-15</td>
+</tr>
+<tr>
+<td>FR-17..FR-20 knowledge base &amp; Topic Notes</td>
+<td><code>domain/ku.py</code> (fold), <code>application/pipeline/project.py</code>, <code>notes.py</code></td>
+<td>AD-2, AD-3, AD-1 (rebuild), AD-17</td>
+</tr>
+<tr>
+<td>FR-21..FR-23 Review Queue</td>
+<td><code>application/review_queue.py</code>, <code>web/routes/</code></td>
+<td>AD-7, AD-3</td>
+</tr>
+<tr>
+<td>FR-24..FR-28 quiz scheduling &amp; generation</td>
+<td><code>domain/scheduling.py</code>, <code>domain/selection.py</code>, <code>application/quiz.py</code></td>
+<td>AD-9, AD-8</td>
+</tr>
+<tr>
+<td>FR-29..FR-32 grading &amp; retention</td>
+<td><code>application/quiz.py</code>, <code>domain/scheduling.py</code>, <code>web/routes/</code></td>
+<td>AD-9, AD-8, AD-13</td>
+</tr>
+<tr>
+<td>FR-33..FR-35 manual corrections</td>
+<td><code>application/review_queue.py</code>, <code>domain/ku.py</code>, <code>web/routes/</code></td>
+<td>AD-3, AD-5</td>
+</tr>
+<tr>
+<td>FR-36..FR-38, FR-53 operability, spend &amp; degrade</td>
+<td><code>functions/</code>, <code>application/queue_worker.py</code>, <code>application/spend.py</code>, App Insights</td>
+<td>AD-4, AD-8, AD-16, AD-17, AD-19, conventions</td>
+</tr>
+<tr>
+<td>FR-39..FR-45 action items</td>
+<td><code>domain/action_items.py</code>, <code>application/action_items.py</code>, <code>application/pipeline/followups.py</code></td>
+<td>AD-12, AD-8, AD-9 (no Card writes), AD-7</td>
+</tr>
+<tr>
+<td>FR-46..FR-52 web app</td>
+<td><code>web/</code> (<code>app.py</code>, <code>auth.py</code>, <code>routes/</code>, <code>templates/</code>)</td>
+<td>AD-10, AD-11 (thin surface), AD-16, AD-17</td>
+</tr>
+<tr>
+<td>Export (§6.1)</td>
+<td><code>application/export.py</code></td>
+<td>AD-18</td>
+</tr>
+</tbody>
+</table>
+<h2 id="deferred">Deferred</h2>
+<ul>
+<li><strong>Internet fact-validation (PRD §5, v2).</strong> Will attach as a post-consolidation advisory stage writing <code>validation</code> annotations on KUs and Review Queue items — no new invariant needed; AD-7's "never auto-resolve" already covers it. Deferred because the ingest→quiz loop must be proven first.</li>
+<li><strong>Concept knowledge-graph / multi-hop retrieval.</strong> Deferred until flat KU + embedding retrieval demonstrably underperforms. A <code>ku_link</code> table (typed edges: <code>prerequisite_of</code>, <code>related_to</code>) is the incremental step before any graph DB.</li>
+<li><strong>External to-do / calendar sync (PRD Open Q 9, v1.1).</strong> A <code>TaskSink</code> port + adapter (Apple Reminders via EventKit / an API for Todoist) pushing open Action Items outward. No new invariant — the Action Item store stays authoritative and the sink is write-through. Deferred with recurring items and priority ordering.</li>
+<li><strong>"Possibly addressed" Follow-up detection (PRD FR-45, v1.1).</strong> The <code>correct</code>×2 auto-resolve for Revisit items ships in v1; detecting that a later Recording's KUs cover an open Follow-up is deferred — it needs a similarity check between the Follow-up's <code>trigger_text</code> and new KUs, routed through the Review Queue.</li>
+<li><strong>Fully-local re-host (AD-18).</strong> The fallback stubs (<code>llm_ollama.py</code>, <code>transcriber_whisper_cpp.py</code>, <code>store_sqlite.py</code>, <code>embedder_local.py</code>) and the <code>export</code> job exist so the system can move back to the user's Mac if Azure credits lapse. Actually wiring, running, and testing that deployment is deferred until it is needed — but the ports and export format must never be designed in a way that blocks it.</li>
+<li><strong>Per-stage model tuning as a cost lever.</strong> v1 runs a top-tier deployment on every stage (PRD §5.2). If <code>SpendMeter</code> shows the budget is tight, point the high-volume low-judgment stages (<code>filter</code>, <code>followups</code>) at a cheaper Foundry deployment via <code>[llm]</code> per-stage overrides. Config-only; AD-8 already allows it.</li>
+<li><strong>App Service as the host.</strong> Simpler than Functions/Container Apps (one FastAPI process, a continuous WebJob for the worker, APScheduler for the timer) — but an Always-On App Service is a continuously-running instance, which conflicts with the Visual Studio credit's dev/test terms and ~120-hour continuous-instance rule (PRD §5.2). Kept as a fallback if serverless friction outweighs the risk; the application code is identical either way.</li>
+<li><strong>Infrastructure-as-code depth.</strong> v1 provisions resources with scripts / the portal and relies on Azure managed backups. Full Bicep/Terraform for the estate, deployment slots, and automated Postgres failover are deferred to v1.1+.</li>
+<li><strong>Pay-as-you-go migration.</strong> If the dev/test terms ever bite, or the KB outgrows the credit, moving to a pay-as-you-go subscription is a billing change, not an architecture change. AD-18's export is the other exit.</li>
+<li><strong>DR beyond managed backups (PRD §6.2).</strong> Postgres Flexible Server and Blob both have built-in backups; a cross-region copy and a tested restore runbook are deferred.</li>
+<li><strong>Audio retention / aging (PRD Open Q 7).</strong> AD-1 says keep forever; a Blob lifecycle rule to Cool/Archive tier, or a future op that drops audio while keeping Transcripts, is deferred.</li>
+<li><strong>Multi-user.</strong> Not a v1 seam (AD-10). Would be a new epic: user table, per-row ownership, per-user Foundry quota.</li>
+<li><strong>Quiz in the web app.</strong> Telegram only for v1 (PRD §6.2). Adding a web quiz surface touches only <code>Delivery</code> + a route; shared state already lives in Postgres.</li>
+<li><strong><code>web_search</code> / internet fact-validation (PRD §5, v2).</strong> Post-consolidation advisory stage writing <code>validation</code> annotations; AD-7 already covers "never auto-resolve".</li>
+<li><strong>Concept knowledge-graph / multi-hop retrieval.</strong> Deferred until flat KU + <code>pgvector</code> retrieval demonstrably underperforms. A <code>ku_link</code> table (typed edges: <code>prerequisite_of</code>, <code>related_to</code>) is the incremental step before any graph DB.</li>
+<li><strong>External to-do / calendar sync (PRD Open Q 9, v1.1).</strong> A <code>TaskSink</code> port + adapter (Apple Reminders / Todoist) pushing open Action Items outward, write-through, Action Item store stays authoritative. With recurring items and priority ordering.</li>
+<li><strong>"Possibly addressed" Follow-up detection (PRD FR-45, v1.1).</strong> <code>correct</code>×2 auto-resolve for Revisit items ships in v1; detecting that a later Recording's KUs cover an open Follow-up needs a similarity check on <code>trigger_text</code> vs new KUs, routed through the Review Queue.</li>
+</ul>
+</main>
+</div>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "neutral", securityLevel: "loose" });
+</script>
+</body>
+</html>

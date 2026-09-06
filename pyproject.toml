@@ -1,0 +1,90 @@
+[project]
+name = "quizme"
+version = "0.1.0"
+description = "A personal knowledge system that grows from your study recordings and quizzes you daily."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Basim" }]
+
+# Runtime dependencies. Grouped by the architecture layer that needs them.
+# See docs/architecture-spine.md → Stack.
+dependencies = [
+    # --- domain / application (provider-agnostic core) ---
+    "fsrs>=6.3,<7",              # spaced-repetition scheduling (AD-9)
+    "pydantic>=2,<3",            # config + API models
+
+    # --- web (WebApp adapter, AD-10 / FR-46..52) ---
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",   # file uploads (FR-47)
+
+    # --- storage (Store adapter, AD-17) ---
+    "sqlalchemy>=2,<3",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.2",
+    "pgvector>=0.3",
+
+    # --- Azure adapters (AD-13) ---
+    "openai>=1.40",                       # Foundry chat endpoint (OpenAI-compatible)
+    "azure-storage-blob>=12.20",
+    "azure-storage-queue>=12.10",
+    "azure-identity>=1.17",               # Managed Identity (AD-17)
+    "azure-keyvault-secrets>=4.8",
+    "azure-cognitiveservices-speech>=1.40",  # Azure AI Speech transcription
+
+    # --- delivery (Delivery adapter) ---
+    "python-telegram-bot>=22,<23",
+]
+
+[project.optional-dependencies]
+# AD-18 local re-host fallback. Not needed for the Azure deployment.
+local = [
+    "openai>=1.40",             # points at a local Ollama endpoint
+    "faster-whisper>=1.0",
+    "sqlite-vec>=0.1.6",
+    "sentence-transformers>=3.0",
+    "apscheduler>=3.10,<4",
+]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "httpx>=0.27",              # FastAPI test client
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["quizme"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [".agents", ".claude"]  # vendored BMad skill scripts, not ours
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+# UP042: StrEnum migration is a fine idiom but (str, Enum) is fully portable and
+# explicit; not worth the churn in the scaffold.
+ignore = ["UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+"quizme/migrations/*" = ["E501"]      # wide CREATE TABLE columns read fine
+"tests/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+# Adapters wrap untyped SDKs; keep the core strict, relax the edges.
+[[tool.mypy.overrides]]
+module = "quizme.adapters.*"
+disallow_untyped_calls = false

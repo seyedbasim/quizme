@@ -1,0 +1,30 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+# Deploys to the Azure Function App (Southeast Asia). Requires repo secrets:
+#   AZURE_CREDENTIALS, AZURE_FUNCTIONAPP_NAME, DATABASE_URL
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --extra dev
+
+      - name: Run migrations (forward-only, AD-17)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: uv run alembic upgrade head
+
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Publish Functions
+        run: |
+          npm i -g azure-functions-core-tools@4 --unsafe-perm true
+          cd functions && func azure functionapp publish ${{ secrets.AZURE_FUNCTIONAPP_NAME }} --python
