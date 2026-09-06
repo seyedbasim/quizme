@@ -13,17 +13,20 @@ max_file_mb = 200
 language = "en"                       # FR-3, English only for v1
 
 [llm]
-# AD-8: one default deployment + per-stage overrides. AD-13: Foundry, not a consumer API.
-endpoint = "https://<your-foundry-resource>.openai.azure.com"
+# AD-8: one default deployment + per-stage overrides.
+endpoint = "https://aoai-quizme-96616d.openai.azure.com"
 api_version = "2025-01-01-preview"
-default_deployment = "gpt-4.1"        # top-tier everywhere for v1 (PRD §5.2)
-deployment_type = "regional"          # regional | datazone — never "global" (AD-13)
+default_deployment = "chat"           # deployment name; model is gpt-5-mini (see below)
+deployment_type = "global"            # GlobalStandard — the only SKU with quota on this
+                                      # subscription/region right now (see docs §5.2 /
+                                      # AD-13 caveat). Request DataZone quota to fix.
+model_note = "gpt-5-mini 2025-08-07. Top-tier gpt-4.1 / gpt-5.2 have 0 default quota on this VS/MCT subscription — needs a quota-increase request. Flip default_deployment (or just the consolidation/grade overrides) when granted."
 temperature = 0.0
 
-# Per-stage overrides — point cheap stages elsewhere if the budget tightens (FR-53).
+# Per-stage overrides — e.g. once top-tier quota lands, point the judgement stages here:
 [llm.stages]
-# filter = "gpt-4.1-mini"
-# followups = "gpt-4.1-mini"
+# consolidate = "chat-4o"
+# grade = "chat-4o"
 
 [llm.consolidation]
 # AD-15: only auto-merge above this confidence; below it, propose via Review Queue.
@@ -36,7 +39,7 @@ mode = "batch"                        # batch | fast
 model = "whisper"
 
 [embeddings]
-deployment = "text-embedding-3-small"
+deployment = "embed"                  # deployment name; model text-embedding-3-small, GlobalStandard
 dimensions = 1536
 
 [quiz]

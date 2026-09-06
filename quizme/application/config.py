@@ -30,8 +30,9 @@ class ConsolidationTuning(BaseModel):
 class LLMConfig(BaseModel):
     endpoint: str = ""
     api_version: str = "2025-01-01-preview"
-    default_deployment: str = "gpt-4.1"
-    deployment_type: str = "regional"  # AD-13: never "global"
+    default_deployment: str = "chat"
+    deployment_type: str = "global"  # global | datazone | regional — see docs §5.2 / AD-13
+    model_note: str = ""
     temperature: float = 0.0
     stages: dict[str, str] = Field(default_factory=dict)
     consolidation: ConsolidationTuning = ConsolidationTuning()
@@ -46,7 +47,7 @@ class TranscriptionConfig(BaseModel):
 
 
 class EmbeddingsConfig(BaseModel):
-    deployment: str = "text-embedding-3-small"
+    deployment: str = "embed"
     dimensions: int = 1536
 
 

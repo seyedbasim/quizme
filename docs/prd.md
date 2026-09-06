@@ -668,7 +668,9 @@ The web app shows the retention view (FR-32) and exposes the user-configurable s
 
 **Privacy**
 - AI inference runs on **Azure AI Foundry / Azure AI Speech deployments in the user's own Azure tenant** — not OpenAI's or Anthropic's public consumer APIs. Audio, Transcripts, Knowledge Units, and Topic Notes are stored only in the user's Azure resources.
-- **CONFIRMED:** a top-tier chat model is deployable in Southeast Asia (Regional or DataZone) with usable quota — inference stays in the user's Azure tenant and, with a Regional deployment, in the Singapore region. `[ASSUMPTION: v1 uses a GPT-4.1-class **Regional** deployment as the default (best data residency); switching to Claude or a DataZone deployment is a config change.]`
+- **PROVISIONED (2026-09-06), with two deviations from the earlier plan:**
+  - **No Regional/DataZone chat deployment.** In Southeast Asia the top chat models offer only `GlobalStandard` or PTU, and on this VS/MCT subscription **`gpt-4.1` / `gpt-5.2` / `gpt-5.4` have zero default quota** (a quota-increase request is required). `DataZoneStandard` deployments were created but did not resolve at the endpoint. → **v1 runs `gpt-5-mini` on `GlobalStandard`** (deployment name `chat`), and `text-embedding-3-small` on `GlobalStandard` (`embed`). GlobalStandard means inference may be **processed in any Azure region** (data at rest stays in the resource). Transcription (**Azure AI Speech**) *is* region-pinned to Southeast Asia — that part holds.
+  - **Path to close both:** submit an Azure OpenAI quota-increase request for a top-tier model on `DataZoneStandard`; when granted, either flip `[llm].default_deployment` or point only the consolidation + grade stages at it via `[llm.stages]` (AD-8). `gpt-5-mini` stays the default for the high-volume stages — good for the budget.
 - **One accepted exception: quiz delivery.** Generated Questions, model answers, and the user's typed Answers transit Telegram's servers. This exposes the substance of individual Knowledge Units *as they are quizzed*. It does **not** expose raw audio, Transcripts, Sources, Topic Notes, the Review Queue, or the knowledge base as a whole.
 - The web app is reachable on the public internet but gated by **App Service / Functions built-in "Easy Auth"** (Entra ID) restricted to the single authorized identity (FR-46).
 
@@ -748,7 +750,7 @@ The web app shows the retention view (FR-32) and exposes the user-configurable s
 10. **Consecutive-`partial` threshold** — how many consecutive `partial` grades on a KU should spawn a Revisit item (FR-41)? Default assumption: 2.
 11. ~~**Azure region**~~ — **RESOLVED: Southeast Asia (Singapore).** Foundry chat models are available there; Azure OpenAI Whisper is not (→ use Azure AI Speech, which is).
 12. ~~**Web auth mechanism**~~ — **RESOLVED: Easy Auth** (App Service / Functions built-in auth, Entra ID), locked to one identity via "assignment required" + a principal check in middleware (FR-46).
-13. ~~**Chat model in Southeast Asia**~~ — **RESOLVED: deployable** (Regional/DataZone, usable quota). v1 default is a GPT-4.1-class Regional deployment; the exact deployment name goes in `config.toml` `[llm].default_deployment` at provisioning. Choosing Claude instead, or DataZone, is a config change.
+13. ~~**Chat model in Southeast Asia**~~ — **PARTLY RESOLVED.** Provisioned on `gpt-5-mini` / `GlobalStandard` (§5.2) because the top-tier models have **zero default quota** on this subscription and DataZone deployments did not resolve. **Open sub-task:** submit an Azure OpenAI quota-increase request for `gpt-5.2` (or `gpt-4.1`) on `DataZoneStandard` — that both raises quality for the judgement stages and restores in-geo processing.
 14. **Dev/test terms risk** — the VS credit is not licensed for production. Serverless-first mitigates but does not eliminate this. Decide whether to accept the grey area for a personal app or move to pay-as-you-go (~$60–90/mo) before any real reliance.
 
 ## 9. Assumptions Index
@@ -766,7 +768,7 @@ The web app shows the retention view (FR-32) and exposes the user-configurable s
 - §5.1 — The to-do list lives inside Quizme only; no external task/calendar integration in v1.
 - §5.2 — **DECIDED (top model everywhere):** a top-tier Foundry model serves every LLM stage; high-volume low-judgment stages can be downgraded per-stage in config if the budget tightens.
 - §5.2 — All inference is via Foundry / AI Speech deployments in the user's Azure tenant; no third-party consumer model API.
-- §5.2 — **CONFIRMED:** a top-tier chat model is deployable in Southeast Asia. v1 default: GPT-4.1-class Regional deployment (inference stays in Singapore).
+- §5.2 — **PROVISIONED:** chat = `gpt-5-mini` / GlobalStandard, embeddings = `text-embedding-3-small` / GlobalStandard (top-tier quota is 0 on this subscription; DataZone didn't resolve). GlobalStandard → inference may be processed outside Singapore. Transcription (Azure AI Speech) is region-pinned. Quota request for DataZone top-tier is the path to close both gaps.
 - §5.2 — Running cost must stay within the monthly credit; the system tracks spend, warns, and throttles paid work before the hard cap (FR-38, FR-53).
 - §5.2 — Web auth is Easy Auth (Entra), locked to one identity.
 - §5.2, §6.2 — A fully-local deployment (Ollama + local whisper + SQLite) is the documented exit for credit-lapse; the KB is exportable on demand; it is not built in v1.

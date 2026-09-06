@@ -180,7 +180,7 @@ companions: [docs/prd.md]</div>
 <li><strong>Binds:</strong> every <code>LLM</code>, <code>Transcriber</code>, <code>Embedder</code>, and <code>Store</code> use.</li>
 <li><strong>Prevents:</strong> personal study content going to a third-party consumer model API; data spread across providers; vendor lock-in that blocks the credit-lapse exit.</li>
 <li><strong>Rule:</strong> All model calls target <strong>Azure AI Foundry / Azure AI Speech deployments in the user's own subscription</strong> (region <strong>Southeast Asia</strong>); no <code>api.openai.com</code> / <code>api.anthropic.com</code> / other consumer endpoints. All persistent data lives in the user's Azure Postgres and Blob. The only outbound traffic outside Azure is the <code>Delivery</code> adapter to Telegram (PRD §5.2), carrying generated Questions, model answers, and user Answers only — never audio, Transcripts, Sources, Topic Notes, or the KB. The op-log and export format carry no Azure-proprietary types, so AD-18's local fallback stays viable.</li>
-<li><strong>Model-region facts:</strong> transcription is Azure AI Speech because Azure OpenAI Whisper is not in Southeast Asia. A top-tier chat model <strong>is</strong> deployable in Southeast Asia (confirmed) — v1 uses a <strong>Regional</strong> deployment there (inference stays in Singapore). If a later model choice needs a <strong>DataZone</strong> deployment, that keeps data in the geo; never use a <strong>Global</strong> deployment for the pipeline (routes anywhere, breaks residency). Pick the deployment type explicitly per model.</li>
+<li><strong>Model-region facts (as provisioned 2026-09-06):</strong> transcription is Azure AI Speech (region-pinned to Southeast Asia) because Azure OpenAI Whisper is not there. <strong>Regional and DataZone chat/embedding deployments are NOT usable on this subscription/region:</strong> the top chat models offer no plain-Standard SKU in Southeast Asia, top-tier models (<code>gpt-4.1</code>, <code>gpt-5.2</code>, <code>gpt-5.4</code>) have <strong>zero default quota</strong> here (needs a quota-increase request), and <code>DataZoneStandard</code> deployments were created but returned <code>DeploymentNotFound</code> at the endpoint. v1 therefore runs <strong><code>GlobalStandard</code></strong> (<code>gpt-5-mini</code> chat, <code>text-embedding-3-small</code> embeddings) — which contradicts this AD's "never Global" intent. <strong>This is a known, documented compromise (PRD §5.2), not a silent override.</strong> Closing it: a quota-increase request for a top-tier model on <code>DataZoneStandard</code> restores in-geo processing <em>and</em> raises judgement-stage quality; then flip <code>[llm].default_deployment</code> or the per-stage overrides.</li>
 </ul>
 <h3 id="ad-14-withdrawn">AD-14 — <em>(withdrawn)</em></h3>
 <p>Previously: "STT and LLM inference are never co-resident" — a memory-budget rule for the 16 GB local-Mac deployment. Obsolete on Azure, where transcription and LLM calls are separate managed endpoints with no shared memory. The <code>resource_class</code> tag is dropped. <strong>ID retained, not reused.</strong></p>
@@ -390,35 +390,31 @@ companions: [docs/prd.md]</div>
 </tr>
 <tr>
 <td><strong>Azure Database for PostgreSQL Flexible Server</strong></td>
-<td><strong>Burstable B1ms</strong> + ~32 GB storage + 7-day backups; <code>pgvector</code> enabled. The one always-billing component, ~$15–20/mo.</td>
+<td><strong>provisioned:</strong> <code>psql-quizme-96616d</code>, Burstable <strong>B1ms</strong>, 32 GB, PG 16, <code>pgvector</code> 0.8.2 enabled, db <code>quizme</code>, migration <code>0001</code> applied. Firewall: my IP + Azure services. The one always-billing component, ~$15–20/mo.</td>
 </tr>
 <tr>
 <td><strong>Azure Blob Storage</strong></td>
-<td>Standard, LRS, Hot; audio + transcripts; lifecycle rule to Cool after N days (PRD Open Q 7). &lt;$2/mo.</td>
-</tr>
-<tr>
-<td><strong>Azure Storage Queue</strong></td>
-<td>one queue <code>ingest</code>, one dead-letter; upload → pipeline trigger (AD-16).</td>
+<td><strong>provisioned:</strong> <code>stquizme96616d</code>, Standard LRS, containers <code>recordings</code> / <code>transcripts</code>, queues <code>ingest</code> / <code>ingest-poison</code>. Lifecycle → Cool (PRD Open Q 7) TODO.</td>
 </tr>
 <tr>
 <td><strong>Azure AI Foundry — chat deployment</strong></td>
-<td>one top-tier deployment as default <code>[llm].default_deployment</code> — a GPT-4.1-class <strong>Regional</strong> deployment in Southeast Asia (confirmed deployable). Never Global (AD-13). Per-stage overrides in config (AD-8).</td>
+<td><strong>provisioned:</strong> <code>gpt-5-mini</code> (2025-08-07) on <code>GlobalStandard</code>, deployment name <code>chat</code>, 50K TPM, resource <code>aoai-quizme-96616d</code> (Southeast Asia). Top-tier + DataZone blocked by quota (see AD-13 note / PRD §5.2). Per-stage overrides in config (AD-8).</td>
 </tr>
 <tr>
 <td><strong>Azure AI Speech</strong></td>
-<td>batch / fast transcription with the Whisper model; word + segment timestamps; available in Southeast Asia. Duration-billed (~$0.30–1.00/audio-hour by tier). Replaces the (region-unavailable) Azure OpenAI Whisper deployment.</td>
+<td><strong>provisioned:</strong> <code>spch-quizme-96616d</code>, S0, Southeast Asia. Batch/fast transcription (Whisper), word + segment timestamps, duration-billed.</td>
 </tr>
 <tr>
 <td><strong>Azure AI Foundry — embeddings deployment</strong></td>
-<td>a text-embedding model; dimension pinned in config. (Local model is the AD-18 fallback.)</td>
+<td><strong>provisioned:</strong> <code>text-embedding-3-small</code> on <code>GlobalStandard</code>, deployment <code>embed</code>, 1536 dims. Local model is the AD-18 fallback.</td>
 </tr>
 <tr>
 <td><strong>Azure Key Vault</strong></td>
-<td>Telegram token + webhook secret, DB creds (prefer Entra auth to Postgres so there is no password), any keys; via <strong>Managed Identity</strong> (AD-17).</td>
+<td><strong>provisioned:</strong> <code>kv-quizme-96616d</code>, RBAC auth. Holds <code>database-url</code>, <code>pg-admin-password</code>, <code>aoai-api-key</code>, <code>speech-api-key</code>, <code>web-allowed-principal</code>. App reads via <strong>Managed Identity</strong> (AD-17); keys are the local-dev / fallback path. Telegram secrets TODO (needs a bot).</td>
 </tr>
 <tr>
 <td><strong>Azure Application Insights / Log Analytics</strong></td>
-<td>logs, traces, request metrics (AD-17).</td>
+<td>logs, traces, request metrics (AD-17). <strong>Not yet provisioned</strong> (created with the Function App).</td>
 </tr>
 <tr>
 <td>SQLAlchemy 2.x + Alembic</td>
