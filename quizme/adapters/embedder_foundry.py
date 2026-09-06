@@ -24,7 +24,15 @@ class FoundryEmbedder:
 
         self._deployment = embeddings.deployment
         self._dims = embeddings.dimensions
-        self._client = _make_client(llm, api_key)
+        # Embeddings may live on a different resource than chat (e.g. chat on an
+        # AI Foundry resource, embeddings on the original Azure OpenAI one).
+        client_cfg = llm.model_copy(
+            update={
+                "endpoint": embeddings.endpoint or llm.endpoint,
+                "api_version": embeddings.api_version or llm.api_version,
+            }
+        )
+        self._client = _make_client(client_cfg, api_key)
 
     def embed(self, texts: Sequence[str]) -> list[list[float]]:
         if not texts:

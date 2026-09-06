@@ -47,6 +47,8 @@ class TranscriptionConfig(BaseModel):
 
 
 class EmbeddingsConfig(BaseModel):
+    endpoint: str = ""  # falls back to the LLM endpoint when unset
+    api_version: str = ""  # falls back to the LLM api_version when unset
     deployment: str = "embed"
     dimensions: int = 1536
 

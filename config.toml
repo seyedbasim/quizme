@@ -39,7 +39,10 @@ mode = "batch"                        # batch | fast
 model = "whisper"
 
 [embeddings]
-deployment = "embed"                  # deployment name on seyedbasim95-2118-resource; model text-embedding-3-small, GlobalStandard
+# Kept on the original Azure OpenAI resource (stable); chat runs on the AI Foundry
+# resource. Set endpoint = "" to co-locate embeddings with chat.
+endpoint = "https://aoai-quizme-96616d.openai.azure.com"
+deployment = "embed"                  # model text-embedding-3-small, GlobalStandard
 dimensions = 1536
 
 [quiz]
