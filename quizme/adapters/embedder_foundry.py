@@ -1,22 +1,40 @@
-"""Embedder — a Foundry text-embedding deployment (AD-13). Vectors land in
-Postgres ``pgvector`` via the Store. Local model is the AD-18 fallback.
+"""Embedder — a Foundry text-embedding deployment (AD-13).
+
+Same auth story as :mod:`quizme.adapters.llm_foundry` (Managed Identity, or an
+API key for local dev). Vectors are stored in Postgres ``pgvector`` by the Store.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 
-from quizme.application.config import EmbeddingsConfig
+from quizme.application.config import EmbeddingsConfig, LLMConfig
+from quizme.domain.errors import LLMError
 
 
 class FoundryEmbedder:
-    def __init__(self, *, config: EmbeddingsConfig, endpoint: str, credential: object) -> None:
-        self._config = config
-        self._endpoint = endpoint
-        self._credential = credential
+    def __init__(
+        self,
+        *,
+        embeddings: EmbeddingsConfig,
+        llm: LLMConfig,
+        api_key: str | None = None,
+    ) -> None:
+        from quizme.adapters.llm_foundry import _make_client  # noqa: PLC0415
+
+        self._deployment = embeddings.deployment
+        self._dims = embeddings.dimensions
+        self._client = _make_client(llm, api_key)
 
     def embed(self, texts: Sequence[str]) -> list[list[float]]:
-        raise NotImplementedError(
-            "FoundryEmbedder.embed: client.embeddings.create(model=config.deployment, input=texts); "
-            f"assert each vector has {self._config.dimensions} dims; return."
-        )
+        if not texts:
+            return []
+        try:
+            resp = self._client.embeddings.create(model=self._deployment, input=list(texts))
+        except Exception as exc:  # noqa: BLE001
+            raise LLMError(f"embeddings failed: {exc}") from exc
+        vectors = [d.embedding for d in resp.data]
+        for v in vectors:
+            if len(v) != self._dims:
+                raise LLMError(f"embedding dim {len(v)} != configured {self._dims}")
+        return vectors

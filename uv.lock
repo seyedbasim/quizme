@@ -4,7 +4,8 @@ requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15'",
     "python_full_version == '3.14.*'",
-    "python_full_version < '3.14'",
+    "python_full_version == '3.13.*'",
+    "python_full_version < '3.13'",
 ]
 
 [[package]]
@@ -181,6 +182,38 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a6/f3/b416179e408990df5db0d516283022dde0f5d0111d98c1a848e41853e81c/azure_core-1.41.0.tar.gz", hash = "sha256:f46ff5dfcd230f25cf1c19e8a34b8dc08a337b2503e268bb600a16c00db8ad5a", size = 381042, upload-time = "2026-05-07T23:30:54.302Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5b/db/325c6d7312d2200251c52323878281045aaffcb5586612296484e4280eaa/azure_core-1.41.0-py3-none-any.whl", hash = "sha256:522b4011e8180b1a3dcd2024396a4e7fe9ac37fb8597db47163d230b5efe892d", size = 220920, upload-time = "2026-05-07T23:30:56.357Z" },
+]
+
+[[package]]
+name = "azure-functions"
+version = "1.25.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.13'",
+]
+dependencies = [
+    { name = "werkzeug" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6f/eb/745418bd7ae135068a88dcd2e0b3cefd526068a7bbe55cc29d5fb5919080/azure_functions-1.25.0.tar.gz", hash = "sha256:3c737657110b6cfd14e6871515ab66c377b9ceecaca8dcbf5b391d2433424756", size = 143938, upload-time = "2026-08-05T19:12:50.176Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a8/21/9374de0e429e7a45090c097111fbbcdea019e726b252cbb35428a816ed1c/azure_functions-1.25.0-py3-none-any.whl", hash = "sha256:0d01e52c0871a01a65911bc163a0dfd7f09725ba43cea17a09909cc5d298c1d2", size = 113831, upload-time = "2026-08-05T19:12:51.567Z" },
+]
+
+[[package]]
+name = "azure-functions"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.15'",
+    "python_full_version == '3.14.*'",
+    "python_full_version == '3.13.*'",
+]
+dependencies = [
+    { name = "werkzeug" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/46/13/fba9acea1d5ebcd849487b11ba4fe1a4e15d77fb10859c09371c31977116/azure_functions-2.3.0.tar.gz", hash = "sha256:32136bae3285680edd2b2d1786c37d381a9ba4c23332dcd590e354190dbe6c9a", size = 174394, upload-time = "2026-08-28T16:14:38.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/47/9f/782dd3799adbab974b02284c5b1e0736f6952ebe3b918f595e71aa99bc70/azure_functions-2.3.0-py3-none-any.whl", hash = "sha256:9eb166cd83875dd88996c5f23a46f8edbbc78c0f9c41926bfdf960be54b6c889", size = 129381, upload-time = "2026-08-28T16:14:39.513Z" },
 ]
 
 [[package]]
@@ -1982,12 +2015,15 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "azure-cognitiveservices-speech" },
+    { name = "azure-functions", version = "1.25.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
+    { name = "azure-functions", version = "2.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "azure-identity" },
     { name = "azure-keyvault-secrets" },
     { name = "azure-storage-blob" },
     { name = "azure-storage-queue" },
     { name = "fastapi" },
     { name = "fsrs" },
+    { name = "httpx" },
     { name = "jinja2" },
     { name = "openai" },
     { name = "pgvector" },
@@ -2020,6 +2056,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
     { name = "apscheduler", marker = "extra == 'local'", specifier = ">=3.10,<4" },
     { name = "azure-cognitiveservices-speech", specifier = ">=1.40" },
+    { name = "azure-functions", specifier = ">=1.21" },
     { name = "azure-identity", specifier = ">=1.17" },
     { name = "azure-keyvault-secrets", specifier = ">=4.8" },
     { name = "azure-storage-blob", specifier = ">=12.20" },
@@ -2027,6 +2064,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "faster-whisper", marker = "extra == 'local'", specifier = ">=1.0" },
     { name = "fsrs", specifier = ">=6.3,<7" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11" },
@@ -2922,4 +2960,16 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/84/77599922ab441bfe61508f97dab2c71f8e114d31793993ea54011db16199/websockets-17.1-cp315-cp315t-win_amd64.whl", hash = "sha256:ad68c28a27246fed109a4409393d677b7e1388345cbbd2f5aee5c182d8506110", size = 217448, upload-time = "2026-08-26T14:58:21.382Z" },
     { url = "https://files.pythonhosted.org/packages/ce/3c/8b9a225b523f06a9389be81f1b0ab07c49bec6014742e6aa359c1f920f1f/websockets-17.1-cp315-cp315t-win_arm64.whl", hash = "sha256:e552e0037230ac16e5f568de7012041344d1b18c9feed30ec2891b8eba55af81", size = 217372, upload-time = "2026-08-26T14:58:22.807Z" },
     { url = "https://files.pythonhosted.org/packages/41/63/23572870e01836a98346075b9e17a8bc24a6ddd9800a3204ceee58677f3c/websockets-17.1-py3-none-any.whl", hash = "sha256:f221081107b8c48184d99f7019604486376e7ef826037e70aad6b02540732c23", size = 211134, upload-time = "2026-08-26T17:25:31.397Z" },
+]
+
+[[package]]
+name = "werkzeug"
+version = "3.1.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markupsafe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dd/b2/381be8cfdee792dd117872481b6e378f85c957dd7c5bca38897b08f765fd/werkzeug-3.1.8.tar.gz", hash = "sha256:9bad61a4268dac112f1c5cd4630a56ede601b6ed420300677a869083d70a4c44", size = 875852, upload-time = "2026-04-02T18:49:14.268Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/93/8c/2e650f2afeb7ee576912636c23ddb621c91ac6a98e66dc8d29c3c69446e1/werkzeug-3.1.8-py3-none-any.whl", hash = "sha256:63a77fb8892bf28ebc3178683445222aa500e48ebad5ec77b0ad80f8726b1f50", size = 226459, upload-time = "2026-04-02T18:49:12.72Z" },
 ]

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Quizme — Upload{% endblock %}
+{% block body %}
+<h1>Upload recordings</h1>
+<div class="card">
+  <form method="post" action="/app/upload" enctype="multipart/form-data">
+    <p><input type="file" name="files" multiple accept=".m4a,.mp3,.wav"></p>
+    <p class="muted">Allowed: {{ formats|join(', ') }} · max {{ max_mb }} MB each</p>
+    <button class="primary">Upload</button>
+  </form>
+</div>
+{% if results %}
+<h2>Result</h2>
+<table>
+  <tr><th>File</th><th>Status</th><th>Detail</th></tr>
+  {% for r in results %}
+  <tr>
+    <td>{{ r.filename }}</td>
+    <td class="{{ 'pill-ok' if r.status == 'accepted' else ('pill-warn' if r.status == 'duplicate' else 'pill-bad') }}">{{ r.status }}</td>
+    <td class="muted">{{ r.get('reason') or r.get('recording_id', '') }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}

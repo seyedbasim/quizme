@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Quizme — To-Do{% endblock %}
+{% block body %}
+<h1>To-Do</h1>
+<p class="muted">
+  <a href="/app/todo">open</a> ·
+  <a href="/app/todo?status=done">done</a> ·
+  <a href="/app/todo?status=dismissed">dismissed</a>
+</p>
+{% for it in items %}
+<div class="card">
+  <span class="tag">{{ it.origin }}</span>
+  {% if it.overdue %}<span class="pill-bad tag">overdue</span>{% endif %}
+  <span class="muted">{{ it.topic }}</span>
+  {% if it.trigger_count > 1 %}<span class="muted">×{{ it.trigger_count }}</span>{% endif %}
+  <div>{{ it.trigger_text }}</div>
+  {% if it.status == 'open' %}
+  <form class="inline" method="post" action="/app/todo/{{ it.id }}/act">
+    <button name="how" value="done">done</button>
+    <button name="how" value="dismissed">dismiss</button>
+  </form>
+  {% else %}
+  <span class="muted">{{ it.status }}</span>
+  {% endif %}
+</div>
+{% else %}
+<p class="muted">Nothing here.</p>
+{% endfor %}
+{% endblock %}

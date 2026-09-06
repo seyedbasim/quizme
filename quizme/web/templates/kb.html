@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Quizme — Knowledge{% endblock %}
+{% block body %}
+<h1>Knowledge base</h1>
+<form method="get" action="/app/kb">
+  <input type="search" name="q" value="{{ q or '' }}" placeholder="search knowledge units…">
+  <button>search</button>
+</form>
+
+{% if hits is not none %}
+<h2>{{ hits|length }} match{{ 'es' if hits|length != 1 }}</h2>
+{% for k in hits %}
+<div class="card">
+  <div>{{ k.canonical }}</div>
+  {% if k.alt_phrasings %}<div class="muted">also: {{ k.alt_phrasings|join('; ') }}</div>{% endif %}
+  <div class="muted" style="font-size:12px">
+    {% for s in k.sources %}<span class="tag">{{ s.recording_id[:8] }} @ {{ '%.0f'|format(s.start) }}s</span>{% endfor %}
+  </div>
+  <form class="inline" method="post" action="/app/kb/{{ k.id }}/archive"><button>archive</button></form>
+</div>
+{% endfor %}
+{% else %}
+<h2>Topics</h2>
+{% for t in topics %}
+<div class="card">
+  <strong>{{ t.label }}</strong> <span class="muted">· {{ t.ku_count }} units</span>
+  {% if t.note %}<div class="kb-note">{{ t.note }}</div>{% endif %}
+</div>
+{% else %}
+<p class="muted">No topics yet — upload a recording to get started.</p>
+{% endfor %}
+{% endif %}
+{% endblock %}

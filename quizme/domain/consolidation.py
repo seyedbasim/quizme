@@ -24,7 +24,7 @@ from enum import Enum
 from typing import Any
 
 from quizme.domain.ids import new_id
-from quizme.domain.ku import Actor, KnowledgeUnit, KUOperation, KUOpType
+from quizme.domain.ku import Actor, KnowledgeUnit, KUOperation, KUOpType, ku_payload
 
 
 class Verdict(str, Enum):
@@ -115,6 +115,10 @@ def plan_operations(
         survivor = existing[best.existing_ku_id]
         add_sources = [{"recording_id": s.recording_id, "start": s.start, "end": s.end} for s in new_ku.sources]
         if best.verdict is Verdict.DUPLICATE:
+            # CREATE then MERGE: fold() unions sources from both KUs, so the loser
+            # must exist in the log. The loser ends up tombstoned pointing at the
+            # survivor — the log honestly records "extracted, then merged".
+            ops.append(_op(KUOpType.CREATE, (new_ku.id,), {"ku": ku_payload(new_ku)}, "created before merge"))
             ops.append(
                 _op(
                     KUOpType.MERGE,
@@ -125,9 +129,6 @@ def plan_operations(
                         "canonical": _richer(survivor.canonical, new_ku.canonical),
                         "alt_phrasings": [new_ku.canonical],
                         "topic_ids": sorted({*survivor.topic_ids, *new_ku.topic_ids}),
-                        # NOTE: fold() unions sources from both KUs; new_ku must be
-                        # persisted (as a create) before this merge, or the caller
-                        # passes its sources through here. See consolidate.py TODO.
                     },
                     best.rationale,
                 )
@@ -151,7 +152,7 @@ def plan_operations(
             _op(
                 KUOpType.CREATE,
                 (new_ku.id,),
-                {"ku": _ku_dict(new_ku)},
+                {"ku": ku_payload(new_ku)},
                 "no confident match among retrieval neighbours",
             )
         )
@@ -182,16 +183,3 @@ def _richer(a: str, b: str) -> str:
     """Keep the more complete phrasing. Length is a crude proxy; the per-Topic
     reorg (FR-16) does a better job later."""
     return a if len(a) >= len(b) else b
-
-
-def _ku_dict(ku: KnowledgeUnit) -> dict[str, Any]:
-    return {
-        "id": ku.id,
-        "canonical": ku.canonical,
-        "topic_ids": list(ku.topic_ids),
-        "sources": [{"recording_id": s.recording_id, "start": s.start, "end": s.end} for s in ku.sources],
-        "alt_phrasings": list(ku.alt_phrasings),
-        "created_at": ku.created_at,
-        "updated_at": ku.updated_at,
-        "status": ku.status.value,
-    }

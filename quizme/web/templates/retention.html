@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Quizme — Retention{% endblock %}
+{% block body %}
+<h1>Retention</h1>
+<table>
+  <tr><th>Topic</th><th class="pill-ok">strong</th><th>ok</th><th class="pill-warn">weak</th><th class="pill-bad">overdue</th></tr>
+  {% for r in topics %}
+  <tr>
+    <td>{{ r.topic }}</td>
+    <td>{{ r.get('strong', 0) }}</td>
+    <td>{{ r.get('ok', 0) }}</td>
+    <td>{{ r.get('weak', 0) }}</td>
+    <td>{{ r.get('overdue', 0) }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" class="muted">No cards yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

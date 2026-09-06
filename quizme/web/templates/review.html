@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Quizme — Review Queue{% endblock %}
+{% block body %}
+<h1>Review Queue</h1>
+{% for it in items %}
+<div class="card">
+  <span class="tag">{{ it.kind }}</span>
+  {% if it.kus %}
+  <ul>
+    {% for k in it.kus %}<li>{{ k.canonical }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if it.context %}<p class="muted">{{ it.context }}</p>{% endif %}
+  <form class="inline" method="post" action="/app/review/{{ it.id }}/resolve">
+    {% if it.kind == 'contradiction' %}
+      <button name="resolution" value="keep_a">keep 1st</button>
+      <button name="resolution" value="keep_b">keep 2nd</button>
+      <button name="resolution" value="dismiss">dismiss</button>
+    {% elif it.kind == 'uncertain_extraction' %}
+      <button name="resolution" value="confirm">confirm</button>
+      <button name="resolution" value="reject">reject</button>
+    {% elif it.kind == 'proposed_merge' %}
+      <button name="resolution" value="merge">merge</button>
+      <button name="resolution" value="dismiss">keep separate</button>
+    {% elif it.kind == 'disputed_grade' %}
+      <button name="resolution" value="overturn">overturn → correct</button>
+      <button name="resolution" value="uphold">uphold</button>
+    {% else %}
+      <button name="resolution" value="dismiss">dismiss</button>
+    {% endif %}
+  </form>
+</div>
+{% else %}
+<p class="muted">Nothing to review. 🎉</p>
+{% endfor %}
+{% endblock %}

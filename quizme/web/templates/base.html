@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Quizme{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header>
+    <span class="brand">Quizme</span>
+    <nav>
+      {% set p = request.url.path %}
+      <a href="/app" class="{{ 'on' if p == '/app' }}">Dashboard</a>
+      <a href="/app/upload" class="{{ 'on' if p == '/app/upload' }}">Upload</a>
+      <a href="/app/ingestion" class="{{ 'on' if p == '/app/ingestion' }}">Ingestion</a>
+      <a href="/app/review" class="{{ 'on' if p == '/app/review' }}">Review</a>
+      <a href="/app/kb" class="{{ 'on' if p == '/app/kb' }}">Knowledge</a>
+      <a href="/app/todo" class="{{ 'on' if p == '/app/todo' }}">To-Do</a>
+      <a href="/app/retention" class="{{ 'on' if p == '/app/retention' }}">Retention</a>
+    </nav>
+  </header>
+  <main>
+    {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+    {% block body %}{% endblock %}
+  </main>
+</body>
+</html>
