@@ -88,9 +88,7 @@ def plan_operations(
     ops: list[KUOperation] = []
     signals: list[ReviewSignal] = []
 
-    def _op(
-        op_type: KUOpType, ku_ids_in: tuple[str, ...], payload: dict[str, Any], rationale: str
-    ) -> KUOperation:
+    def _op(op_type: KUOpType, ku_ids_in: tuple[str, ...], payload: dict[str, Any], rationale: str) -> KUOperation:
         return KUOperation(
             op_id=new_id(),
             ts=now,
