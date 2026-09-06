@@ -49,8 +49,10 @@ def test_high_confidence_duplicate_merges() -> None:
 
     plan = _plan(new, j, {existing_ku.id: existing_ku})
 
-    assert [op.type for op in plan.ops] == [KUOpType.MERGE]
-    assert plan.ops[0].payload["survivor_id"] == existing_ku.id
+    # CREATE (so fold can union sources) then MERGE
+    assert [op.type for op in plan.ops] == [KUOpType.CREATE, KUOpType.MERGE]
+    assert plan.ops[1].payload["survivor_id"] == existing_ku.id
+    assert plan.ops[1].payload["loser_id"] == new.id
     assert plan.review_signals == ()
 
 

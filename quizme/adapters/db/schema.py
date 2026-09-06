@@ -97,6 +97,23 @@ ku_embedding = Table(
     Column("embedding", Vector(1536)),
 )
 
+topic = Table(
+    "topic",
+    metadata,
+    Column("id", String, primary_key=True),
+    Column("slug", String, nullable=False, unique=True),
+    Column("label", String, nullable=False),
+)
+
+topic_note = Table(
+    "topic_note",
+    metadata,
+    Column("topic_id", String, primary_key=True),
+    Column("markdown", Text, nullable=False),
+    Column("prompt_version", String, nullable=False),
+    Column("regenerated_at", DateTime(timezone=True), nullable=False),
+)
+
 card = Table(
     "card",
     metadata,

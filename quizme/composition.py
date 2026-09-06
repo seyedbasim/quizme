@@ -34,7 +34,11 @@ def build_deps(config: Config | None = None) -> Deps:
     aoai_key = os.environ.get("AZURE_OPENAI_API_KEY") or None
     speech_key = os.environ.get("AZURE_SPEECH_KEY") or None
 
-    store = PostgresStore(_require("DATABASE_URL"))
+    store = PostgresStore(
+        _require("DATABASE_URL"),
+        blob_account_url=_require("AZURE_BLOB_ACCOUNT_URL"),
+        credential=cred,
+    )
     llm = FoundryLLM(config=cfg.llm, sink=store, api_key=aoai_key)
     clock = SystemClock()
 

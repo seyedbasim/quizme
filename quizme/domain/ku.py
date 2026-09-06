@@ -122,6 +122,20 @@ def _dt(v: datetime | str) -> datetime:
     return v if isinstance(v, datetime) else datetime.fromisoformat(v)
 
 
+def ku_payload(ku: KnowledgeUnit) -> dict[str, Any]:
+    """KU as a JSON-serialisable ``create``/``split`` op payload (timestamps → ISO)."""
+    return {
+        "id": ku.id,
+        "canonical": ku.canonical,
+        "topic_ids": list(ku.topic_ids),
+        "sources": [{"recording_id": s.recording_id, "start": s.start, "end": s.end} for s in ku.sources],
+        "alt_phrasings": list(ku.alt_phrasings),
+        "created_at": ku.created_at.isoformat(),
+        "updated_at": ku.updated_at.isoformat(),
+        "status": ku.status.value,
+    }
+
+
 def _ku_from_payload(d: Mapping[str, Any]) -> KnowledgeUnit:
     return KnowledgeUnit(
         id=d["id"],

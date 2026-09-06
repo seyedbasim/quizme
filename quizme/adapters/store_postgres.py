@@ -14,6 +14,7 @@ setting; SQLAlchemy engine with a small pool (Flex Consumption + Burstable PG).
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
@@ -44,8 +45,19 @@ def _json_default(o: object) -> str:
     raise TypeError(f"not JSON-serialisable: {type(o)}")
 
 
+def _slug(label: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", label.strip().lower()).strip("-") or "misc"
+
+
 class PostgresStore:
-    def __init__(self, dsn: str, *, echo: bool = False) -> None:
+    def __init__(
+        self,
+        dsn: str,
+        *,
+        echo: bool = False,
+        blob_account_url: str | None = None,
+        credential: Any = None,
+    ) -> None:
         self._engine: Engine = create_engine(
             dsn,
             echo=echo,
@@ -54,9 +66,80 @@ class PostgresStore:
             pool_pre_ping=True,
             json_serializer=lambda v: json.dumps(v, default=_json_default),
         )
+        self._blob_account_url = blob_account_url
+        self._credential = credential
+        self._blob_svc: Any = None
 
     def dispose(self) -> None:
         self._engine.dispose()
+
+    # -- blob (AD-1) -----------------------------------------------------
+
+    def _blobs(self) -> Any:
+        if self._blob_svc is None:
+            from azure.storage.blob import BlobServiceClient  # noqa: PLC0415
+
+            if not self._blob_account_url:
+                raise StorageError("PostgresStore was built without a blob account URL")
+            self._blob_svc = BlobServiceClient(self._blob_account_url, credential=self._credential)
+        return self._blob_svc
+
+    def put_blob(self, container: str, key: str, data: bytes, *, overwrite: bool = True) -> str:
+        client = self._blobs().get_blob_client(container=container, blob=key)
+        client.upload_blob(data, overwrite=overwrite)
+        return client.url
+
+    def read_blob(self, container: str, key: str) -> bytes:
+        return self._blobs().get_blob_client(container=container, blob=key).download_blob().readall()
+
+    def blob_url(self, container: str, key: str) -> str:
+        return self._blobs().get_blob_client(container=container, blob=key).url
+
+    # -- topics --------------------------------------------------------
+
+    def get_or_create_topic(self, label: str) -> str:
+        slug = _slug(label)
+        with self._engine.begin() as conn:
+            row = conn.execute(select(s.topic.c.id).where(s.topic.c.slug == slug)).first()
+            if row:
+                return row[0]
+            topic_id = new_id()
+            conn.execute(
+                pg_insert(s.topic)
+                .values(id=topic_id, slug=slug, label=label.strip())
+                .on_conflict_do_nothing(index_elements=["slug"])
+            )
+            row = conn.execute(select(s.topic.c.id).where(s.topic.c.slug == slug)).first()
+            return row[0] if row else topic_id
+
+    def topic_labels(self, topic_ids: Sequence[str]) -> dict[str, str]:
+        if not topic_ids:
+            return {}
+        with self._engine.connect() as conn:
+            rows = conn.execute(select(s.topic.c.id, s.topic.c.label).where(s.topic.c.id.in_(list(topic_ids))))
+            return {r[0]: r[1] for r in rows}
+
+    def get_topic_note(self, topic_id: str) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.topic_note).where(s.topic_note.c.topic_id == topic_id)).mappings().first()
+            return dict(r) if r else None
+
+    def set_topic_note(self, topic_id: str, *, markdown: str, prompt_version: str) -> None:
+        stmt = (
+            pg_insert(s.topic_note)
+            .values(
+                topic_id=topic_id,
+                markdown=markdown,
+                prompt_version=prompt_version,
+                regenerated_at=datetime.now(UTC),
+            )
+            .on_conflict_do_update(
+                index_elements=["topic_id"],
+                set_={"markdown": markdown, "prompt_version": prompt_version, "regenerated_at": datetime.now(UTC)},
+            )
+        )
+        with self._engine.begin() as conn:
+            conn.execute(stmt)
 
     # -- recordings / transcripts (AD-1) -----------------------------------
 
@@ -98,10 +181,24 @@ class PostgresStore:
                 )
             )
 
+    def get_transcript_by_recording(self, recording_id: str) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.transcript).where(s.transcript.c.recording_id == recording_id)).mappings().first()
+            return dict(r) if r else None
+
     def add_segments(self, rows: Sequence[dict[str, Any]]) -> None:
         if rows:
             with self._engine.begin() as conn:
                 conn.execute(insert(s.segment), list(rows))
+
+    def get_segments(self, transcript_id: str) -> list[dict[str, Any]]:
+        with self._engine.connect() as conn:
+            return [
+                dict(r)
+                for r in conn.execute(
+                    select(s.segment).where(s.segment.c.transcript_id == transcript_id).order_by(s.segment.c.start_s)
+                ).mappings()
+            ]
 
     # -- run history (FR-37) ---------------------------------------------
 
@@ -167,6 +264,34 @@ class PostgresStore:
         stmt = stmt.on_conflict_do_update(index_elements=["ku_id"], set_={"embedding": list(embedding)})
         with self._engine.begin() as conn:
             conn.execute(stmt)
+
+    def kus_for_topic(self, topic_id: str) -> list[KnowledgeUnit]:
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                select(s.knowledge_unit).where(
+                    s.knowledge_unit.c.status == KUStatus.ACTIVE.value,
+                    s.knowledge_unit.c.topic_ids.contains([topic_id]),
+                )
+            ).mappings()
+            return [_row_to_ku(r) for r in rows]
+
+    def contradicted_and_pending_ku_ids(self) -> set[str]:
+        """KUs to exclude from quiz selection (FR-15 / FR-24)."""
+        with self._engine.connect() as conn:
+            open_items = conn.execute(
+                select(s.review_item.c.ku_ids).where(
+                    s.review_item.c.status == "open",
+                    s.review_item.c.kind.in_(["contradiction", "uncertain_extraction", "disputed_grade"]),
+                )
+            )
+            out: set[str] = set()
+            for (ids,) in open_items:
+                out.update(ids)
+            pending = conn.execute(
+                select(s.knowledge_unit.c.id).where(s.knowledge_unit.c.status == KUStatus.PENDING_REVIEW.value)
+            )
+            out.update(r[0] for r in pending)
+            return out
 
     def nearest_kus(self, embedding: Sequence[float], *, k: int) -> list[KnowledgeUnit]:
         """Top-k live KUs by cosine distance (AD-6 bound is applied by the caller

@@ -13,9 +13,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from quizme.domain.action_items import AIStatus, Origin, revisit_key, upsert
-from quizme.domain.consolidation import _ku_dict
 from quizme.domain.ids import new_id
-from quizme.domain.ku import Actor, KnowledgeUnit, KUOperation, KUOpType, KUStatus, SourceRef
+from quizme.domain.ku import Actor, KnowledgeUnit, KUOperation, KUOpType, KUStatus, SourceRef, ku_payload
 from quizme.domain.scheduling import Card
 
 _DSN = os.environ.get("QUIZME_TEST_DATABASE_URL")
@@ -53,7 +52,7 @@ def _create_op(ku: KnowledgeUnit) -> KUOperation:
         actor=Actor.ENGINE,
         type=KUOpType.CREATE,
         ku_ids_in=(ku.id,),
-        payload={"ku": _ku_dict(ku)},
+        payload={"ku": ku_payload(ku)},
         model="m",
         prompt_version="v1",
         prompt_hash="h",
