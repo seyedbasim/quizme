@@ -34,6 +34,8 @@ async def webhook(
     ):
         return Response(status_code=403)
 
+    deps.delivery.enrol_chat(chat_id)  # first verified contact becomes the allowed chat
+
     if "callback_query" in update:
         data = update["callback_query"].get("data", "")
         if data.startswith("dispute:"):

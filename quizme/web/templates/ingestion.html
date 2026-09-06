@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Quizme — Ingestion{% endblock %}
+{% block body %}
+<h1>Ingestion</h1>
+<table>
+  <tr><th>File</th><th>Uploaded</th><th>Stages OK</th><th>Failed</th><th>Last stage</th><th></th></tr>
+  {% for r in recordings %}
+  <tr>
+    <td>{{ r.filename }}</td>
+    <td class="muted">{{ r.created_at }}</td>
+    <td>{{ r.ok }}</td>
+    <td class="{{ 'pill-bad' if r.failed }}">{{ r.failed }}</td>
+    <td class="muted">{{ r.last_ok or '—' }}</td>
+    <td>
+      {% if r.failed %}
+      <form class="inline" method="post" action="/app/ingestion/{{ r.id }}/retry"><button>retry</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="muted">Nothing ingested yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

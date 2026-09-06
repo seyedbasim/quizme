@@ -61,8 +61,11 @@ def build_deps(config: Config | None = None) -> Deps:
         ),
         delivery=TelegramDelivery(
             bot_token=_require("TELEGRAM_BOT_TOKEN"),
-            allowed_chat_id=int(_require("TELEGRAM_ALLOWED_CHAT_ID")),
             webhook_secret=_require("TELEGRAM_WEBHOOK_SECRET"),
+            store=store,
+            allowed_chat_id=(
+                int(os.environ["TELEGRAM_ALLOWED_CHAT_ID"]) if os.environ.get("TELEGRAM_ALLOWED_CHAT_ID") else None
+            ),
         ),
         grader=LLMGrader(llm),
         spend=SpendMeterImpl(store=store, clock=clock, budget=cfg.budget),

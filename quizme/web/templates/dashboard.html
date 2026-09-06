@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Quizme — Dashboard{% endblock %}
+{% block body %}
+<h1>Dashboard</h1>
+<div class="grid">
+  <div class="card stat"><div class="n">{{ live_kus }}</div><div class="l">knowledge units</div></div>
+  <div class="card stat"><div class="n">{{ due_today }}</div><div class="l">due for review</div></div>
+  <div class="card stat"><div class="n {{ 'pill-warn' if review_open }}">{{ review_open }}</div><div class="l">review queue</div></div>
+  <div class="card stat"><div class="n">{{ todo_open }}</div><div class="l">open to-dos</div></div>
+</div>
+
+<h2>Spend this month</h2>
+<div class="card">
+  <strong>${{ '%.2f'|format(mtd) }}</strong> so far,
+  projected <strong>${{ '%.2f'|format(projected) }}</strong>
+  of ${{ credit }} credit
+  {% if throttled %}<span class="pill-bad">— throttled</span>{% endif %}
+</div>
+
+<h2>Quiz</h2>
+<div class="card">
+  {% if quiz_today %}
+    Today's quiz: {{ quiz_today.answered }}/{{ quiz_today.total }} answered.
+  {% else %}
+    No quiz built yet today. The timer builds it at {{ quiz_time }} local.
+  {% endif %}
+  <form class="inline" method="post" action="/app/quiz/build">
+    <button>Build / re-send now</button>
+  </form>
+</div>
+{% endblock %}

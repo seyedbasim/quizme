@@ -589,6 +589,22 @@ class PostgresStore:
             ).scalar_one()
             return float(total)
 
+    # -- settings (FR-52) --------------------------------------------
+
+    def get_setting(self, key: str) -> Any:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.app_setting.c.value).where(s.app_setting.c.key == key)).first()
+            return r[0] if r else None
+
+    def set_setting(self, key: str, value: Any) -> None:
+        stmt = (
+            pg_insert(s.app_setting)
+            .values(key=key, value=value, updated_at=datetime.now(UTC))
+            .on_conflict_do_update(index_elements=["key"], set_={"value": value, "updated_at": datetime.now(UTC)})
+        )
+        with self._engine.begin() as conn:
+            conn.execute(stmt)
+
     # -- maintenance ---------------------------------------------------
 
     def wipe_all(self) -> None:
