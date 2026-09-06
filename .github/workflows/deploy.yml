@@ -8,6 +8,7 @@ on:
       - "quizme/**"
       - "function_app.py"
       - "host.json"
+      - "config.toml"
       - "requirements.txt"
       - ".funcignore"
 

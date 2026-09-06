@@ -58,7 +58,7 @@ def deps():
 
     cfg = Config()
     cfg.llm.endpoint = _EP
-    cfg.llm.default_deployment = "chat"
+    cfg.llm.default_deployment = "gpt-5-mini"
     cfg.embeddings.deployment = "embed"
 
     store = PostgresStore(_DSN, blob_account_url=_BLOB, credential=DefaultAzureCredential())

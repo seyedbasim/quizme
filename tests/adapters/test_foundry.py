@@ -1,7 +1,7 @@
 """Integration tests for the Foundry LLM + Embedder adapters.
 
 Run with:
-  QUIZME_TEST_AOAI_ENDPOINT=https://aoai-quizme-96616d.openai.azure.com
+  QUIZME_TEST_AOAI_ENDPOINT=https://seyedbasim95-2118-resource.openai.azure.com
   QUIZME_TEST_AOAI_KEY=<key>
 """
 
@@ -27,7 +27,7 @@ class _Sink:
 
 
 def _llm_cfg() -> LLMConfig:
-    return LLMConfig(endpoint=_EP, default_deployment="chat", api_version="2025-01-01-preview")
+    return LLMConfig(endpoint=_EP, default_deployment="gpt-5-mini", api_version="2025-01-01-preview")
 
 
 def test_llm_structured_output_and_spend_row() -> None:

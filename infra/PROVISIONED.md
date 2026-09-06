@@ -16,7 +16,8 @@ dead-lettering).
 | --- | --- | --- |
 | Storage account | `stquizme96616d` | Standard LRS. Containers `recordings`, `transcripts`. Queues `ingest`, `ingest-poison`. |
 | PostgreSQL Flexible | `psql-quizme-96616d` | Burstable B1ms, 32 GB, PG 16. `pgvector` 0.8.2 enabled. DB `quizme`, migration `0001` applied. Admin `quizadmin` (password in KV). Firewall: home IP + Azure services. |
-| Azure OpenAI (Foundry) | `aoai-quizme-96616d` | System-assigned identity. Deployments: `chat` = `gpt-5-mini` GlobalStandard 50K TPM; `embed` = `text-embedding-3-small` GlobalStandard 50K TPM. |
+| AI Foundry (live) | `seyedbasim95-2118-resource` (project `seyedbasim95-2118`) | `AIServices` kind. **In use as of 2026-09-07.** Deployments: `gpt-5-mini` = `gpt-5-mini` 2025-08-07 GlobalStandard 225K TPM; `embed` = `text-embedding-3-small` GlobalStandard 50K TPM. Endpoint `https://seyedbasim95-2118-resource.openai.azure.com`. |
+| Azure OpenAI (legacy, idle) | `aoai-quizme-96616d` | System-assigned identity. Deployments: `chat` = `gpt-5-mini` GlobalStandard 50K TPM; `embed` = `text-embedding-3-small` GlobalStandard 50K TPM. No longer referenced by the app — kept as fallback, safe to delete. |
 | Azure AI Speech | `spch-quizme-96616d` | S0. Endpoint `https://southeastasia.api.cognitive.microsoft.com/`. |
 | Key Vault | `kv-quizme-96616d` | RBAC auth. Secrets: `database-url`, `pg-admin-password`, `aoai-api-key`, `speech-api-key`, `web-allowed-principal`, `telegram-bot-token`, `telegram-webhook-secret`, `easyauth-client-secret`. |
 | Log Analytics | `log-quizme-96616d` | — |
@@ -37,7 +38,7 @@ dead-lettering).
 | --- | --- |
 | Storage Blob Data Contributor | `stquizme96616d` |
 | Storage Queue Data Contributor | `stquizme96616d` |
-| Cognitive Services OpenAI User | `aoai-quizme-96616d` |
+| Cognitive Services OpenAI User | `seyedbasim95-2118-resource` (live), `aoai-quizme-96616d` (legacy) |
 | Cognitive Services User | `spch-quizme-96616d` |
 | Key Vault Secrets User | `kv-quizme-96616d` |
 
@@ -92,7 +93,7 @@ add a deployment and update `config.toml` `[llm]`.
 
 ```bash
 export DATABASE_URL="$(az keyvault secret show --vault-name kv-quizme-96616d -n database-url --query value -o tsv)"
-export AZURE_OPENAI_ENDPOINT="https://aoai-quizme-96616d.openai.azure.com"
+export AZURE_OPENAI_ENDPOINT="https://seyedbasim95-2118-resource.openai.azure.com"
 export AZURE_OPENAI_API_KEY="$(az keyvault secret show --vault-name kv-quizme-96616d -n aoai-api-key --query value -o tsv)"
 export AZURE_SPEECH_KEY="$(az keyvault secret show --vault-name kv-quizme-96616d -n speech-api-key --query value -o tsv)"
 export AZURE_SPEECH_REGION=southeastasia

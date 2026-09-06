@@ -57,7 +57,7 @@ def deps():
 
     cfg = Config()
     cfg.llm.endpoint = _EP
-    cfg.llm.default_deployment = "chat"
+    cfg.llm.default_deployment = "gpt-5-mini"
     cfg.embeddings.deployment = "embed"
     cfg.quiz.max_questions_per_day = 3
 

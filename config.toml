@@ -14,13 +14,13 @@ language = "en"                       # FR-3, English only for v1
 
 [llm]
 # AD-8: one default deployment + per-stage overrides.
-endpoint = "https://aoai-quizme-96616d.openai.azure.com"
+endpoint = "https://seyedbasim95-2118-resource.openai.azure.com"
 api_version = "2025-01-01-preview"
-default_deployment = "chat"           # deployment name; model is gpt-5-mini (see below)
+default_deployment = "gpt-5-mini"     # deployment name on the AI Foundry resource; model is gpt-5-mini
 deployment_type = "global"            # GlobalStandard — the only SKU with quota on this
                                       # subscription/region right now (see docs §5.2 /
                                       # AD-13 caveat). Request DataZone quota to fix.
-model_note = "gpt-5-mini 2025-08-07. Top-tier gpt-4.1 / gpt-5.2 have 0 default quota on this VS/MCT subscription — needs a quota-increase request. Flip default_deployment (or just the consolidation/grade overrides) when granted."
+model_note = "gpt-5-mini 2025-08-07 on AI Foundry resource seyedbasim95-2118-resource (project seyedbasim95-2118). Top-tier gpt-4.1 / gpt-5.2 have 0 default quota on this VS/MCT subscription — needs a quota-increase request. Flip default_deployment (or just the consolidation/grade overrides) when granted."
 temperature = 0.0
 
 # Per-stage overrides — e.g. once top-tier quota lands, point the judgement stages here:
@@ -39,7 +39,7 @@ mode = "batch"                        # batch | fast
 model = "whisper"
 
 [embeddings]
-deployment = "embed"                  # deployment name; model text-embedding-3-small, GlobalStandard
+deployment = "embed"                  # deployment name on seyedbasim95-2118-resource; model text-embedding-3-small, GlobalStandard
 dimensions = 1536
 
 [quiz]
