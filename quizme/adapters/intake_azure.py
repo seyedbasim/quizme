@@ -91,3 +91,10 @@ class AzureRecordingIntake:
             raise AdapterError(f"queue enqueue failed: {exc}") from exc
 
         return AcceptedRecordingImpl(recording_id, sha, blob.url)
+
+    def reenqueue(self, recording_id: str) -> None:
+        body = base64.b64encode(json.dumps({"recording_id": recording_id}).encode()).decode()
+        try:
+            self._queue.send_message(body)
+        except Exception as exc:  # noqa: BLE001
+            raise AdapterError(f"reenqueue failed: {exc}") from exc

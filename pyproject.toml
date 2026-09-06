@@ -80,6 +80,7 @@ ignore = ["UP042"]
 
 [tool.ruff.lint.per-file-ignores]
 "quizme/migrations/*" = ["E501"]      # wide CREATE TABLE columns read fine
+"quizme/web/*" = ["B008"]             # FastAPI Depends/Body/Header in defaults is idiomatic
 "tests/*" = ["E501"]
 
 [tool.mypy]

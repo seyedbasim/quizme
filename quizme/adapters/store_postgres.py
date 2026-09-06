@@ -206,6 +206,22 @@ class PostgresStore:
         with self._engine.begin() as conn:
             conn.execute(insert(s.stage_run).values(id=new_id(), **row))
 
+    def ingestion_status(self, *, limit: int = 50) -> list[dict[str, Any]]:
+        from sqlalchemy import text as _text
+
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                _text(
+                    "select r.id, r.filename, r.created_at, "
+                    " (select count(*) from stage_run sr where sr.recording_id=r.id and sr.status='ok') ok, "
+                    " (select count(*) from stage_run sr where sr.recording_id=r.id and sr.status='failed') failed, "
+                    " (select max(sr.stage) from stage_run sr where sr.recording_id=r.id and sr.status='ok') last_ok "
+                    "from recording r order by r.created_at desc limit :lim"
+                ),
+                {"lim": limit},
+            ).mappings()
+            return [dict(x) for x in rows]
+
     # -- operation log / KB projection (AD-3) ---------------------------------
 
     def append_ops(self, ops: Sequence[KUOperation]) -> None:
@@ -367,13 +383,14 @@ class PostgresStore:
         vals = {
             "ku_id": c.ku_id,
             "due": c.due,
-            "stability": c.stability,
-            "difficulty": c.difficulty,
-            "step": c.step,
+            "stability": c.stability or None,
+            "difficulty": c.difficulty or None,
+            "step": c.fsrs_json.get("step"),
             "reps": c.reps,
             "lapses": c.lapses,
             "last_review": c.last_review,
             "state": c.state,
+            "fsrs_json": c.fsrs_json,
         }
         stmt = (
             pg_insert(s.card)
@@ -421,6 +438,19 @@ class PostgresStore:
         with self._engine.begin() as conn:
             conn.execute(stmt)
 
+    def list_action_items(self, *, status: str | None = None, origin: str | None = None) -> list[ActionItem]:
+        conds = []
+        if status:
+            conds.append(s.action_item.c.status == status)
+        if origin:
+            conds.append(s.action_item.c.origin == origin)
+        with self._engine.connect() as conn:
+            q = select(s.action_item)
+            if conds:
+                q = q.where(*conds)
+            q = q.order_by(s.action_item.c.updated_at.desc())
+            return [_row_to_action_item(r) for r in conn.execute(q).mappings()]
+
     # -- review queue (FR-21) ------------------------------------------
 
     def add_review_item(self, *, kind: str, ku_ids: Sequence[str], context: dict) -> None:
@@ -435,6 +465,100 @@ class PostgresStore:
                     created_at=datetime.now(UTC),
                 )
             )
+
+    def list_review_items(self, *, status: str = "open") -> list[dict[str, Any]]:
+        with self._engine.connect() as conn:
+            return [
+                dict(r)
+                for r in conn.execute(
+                    select(s.review_item).where(s.review_item.c.status == status).order_by(s.review_item.c.created_at)
+                ).mappings()
+            ]
+
+    def get_review_item(self, item_id: str) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.review_item).where(s.review_item.c.id == item_id)).mappings().first()
+            return dict(r) if r else None
+
+    def resolve_review_item(self, item_id: str, *, resolution: str) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(
+                s.review_item.update()
+                .where(s.review_item.c.id == item_id)
+                .values(status="resolved", resolved_at=datetime.now(UTC), resolution=resolution)
+            )
+
+    # -- quiz / question / answer / grade (FR-24..31) -----------------
+
+    def add_quiz(self, *, quiz_id: str, quiz_date: Any, ku_ids: Sequence[str]) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(
+                insert(s.quiz).values(
+                    id=quiz_id, quiz_date=quiz_date, ku_ids=list(ku_ids), created_at=datetime.now(UTC)
+                )
+            )
+
+    def get_quiz_by_date(self, quiz_date: Any) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.quiz).where(s.quiz.c.quiz_date == quiz_date)).mappings().first()
+            return dict(r) if r else None
+
+    def add_questions(self, rows: Sequence[dict[str, Any]]) -> None:
+        if rows:
+            with self._engine.begin() as conn:
+                conn.execute(insert(s.question), list(rows))
+
+    def get_question(self, question_id: str) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.question).where(s.question.c.id == question_id)).mappings().first()
+            return dict(r) if r else None
+
+    def quiz_questions(self, quiz_id: str) -> list[dict[str, Any]]:
+        with self._engine.connect() as conn:
+            return [dict(r) for r in conn.execute(select(s.question).where(s.question.c.quiz_id == quiz_id)).mappings()]
+
+    def record_answer(self, *, question_id: str, text: str) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(
+                pg_insert(s.answer)
+                .values(question_id=question_id, text=text, submitted_at=datetime.now(UTC))
+                .on_conflict_do_update(
+                    index_elements=["question_id"],
+                    set_={"text": text, "submitted_at": datetime.now(UTC)},
+                )
+            )
+
+    def record_grade(self, row: dict[str, Any]) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(
+                pg_insert(s.grade)
+                .values(graded_at=datetime.now(UTC), **row)
+                .on_conflict_do_update(
+                    index_elements=["question_id"],
+                    set_={k: v for k, v in {**row, "graded_at": datetime.now(UTC)}.items() if k != "question_id"},
+                )
+            )
+
+    def get_grade(self, question_id: str) -> dict[str, Any] | None:
+        with self._engine.connect() as conn:
+            r = conn.execute(select(s.grade).where(s.grade.c.question_id == question_id)).mappings().first()
+            return dict(r) if r else None
+
+    def mark_grade_disputed(self, question_id: str) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(s.grade.update().where(s.grade.c.question_id == question_id).values(disputed=True))
+
+    def recent_grades_for_ku(self, ku_id: str, *, limit: int = 5) -> list[str]:
+        """Grade values for a KU's questions, most recent first (FR-41/45)."""
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                select(s.grade.c.value)
+                .select_from(s.grade.join(s.question, s.question.c.id == s.grade.c.question_id))
+                .where(s.question.c.ku_id == ku_id, s.grade.c.disputed.is_(False))
+                .order_by(s.grade.c.graded_at.desc())
+                .limit(limit)
+            )
+            return [r[0] for r in rows]
 
     # -- spend (FR-38) -----------------------------------------------
 
@@ -473,9 +597,10 @@ class PostgresStore:
         from sqlalchemy import text
 
         tables = (
-            "llm_call, review_item, action_item, card, processed_ledger, stage_run, "
-            "ku_embedding, knowledge_unit, segment, transcript, recording, app_setting, "
-            "ku_operation"
+            "llm_call, grade, answer, question, quiz, review_item, "
+            "action_item_event, action_item, card, processed_ledger, stage_run, "
+            "topic_note, topic, ku_embedding, knowledge_unit, segment, transcript, "
+            "recording, app_setting, ku_operation"
         )
         with self._engine.begin() as conn:
             conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
@@ -502,13 +627,13 @@ def _row_to_card(r: Any) -> Card:
     return Card(
         ku_id=r["ku_id"],
         due=r["due"],
-        stability=r["stability"],
-        difficulty=r["difficulty"],
-        step=r["step"],
-        reps=r["reps"],
-        lapses=r["lapses"],
-        last_review=r["last_review"],
+        stability=float(r["stability"] or 0.0),
+        difficulty=float(r["difficulty"] or 0.0),
         state=r["state"],
+        last_review=r["last_review"],
+        reps=r["reps"] or 0,
+        lapses=r["lapses"] or 0,
+        fsrs_json=r["fsrs_json"] or {},
     )
 
 

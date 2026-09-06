@@ -10,7 +10,9 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     Integer,
@@ -119,13 +121,56 @@ card = Table(
     metadata,
     Column("ku_id", String, primary_key=True),
     Column("due", _TS, nullable=False),
-    Column("stability", Float, nullable=False),
-    Column("difficulty", Float, nullable=False),
-    Column("step", Integer, nullable=False),
-    Column("reps", Integer, nullable=False),
-    Column("lapses", Integer, nullable=False),
+    Column("stability", Float),
+    Column("difficulty", Float),
+    Column("step", Integer),
+    Column("reps", Integer),
+    Column("lapses", Integer),
     Column("last_review", _TS),
     Column("state", String, nullable=False),
+    Column("fsrs_json", JSON, nullable=False, server_default="{}"),
+)
+
+quiz = Table(
+    "quiz",
+    metadata,
+    Column("id", String, primary_key=True),
+    Column("quiz_date", Date, nullable=False, unique=True),
+    Column("ku_ids", JSON, nullable=False),
+    Column("created_at", _TS, nullable=False),
+)
+
+question = Table(
+    "question",
+    metadata,
+    Column("id", String, primary_key=True),
+    Column("quiz_id", String, nullable=False),
+    Column("ku_id", String, nullable=False),
+    Column("type", String, nullable=False),
+    Column("prompt", Text, nullable=False),
+    Column("model_answer", Text, nullable=False),
+    Column("phrasing_used", Text, nullable=False),
+    Column("prompt_version", String, nullable=False),
+)
+
+answer = Table(
+    "answer",
+    metadata,
+    Column("question_id", String, primary_key=True),
+    Column("text", Text, nullable=False),
+    Column("submitted_at", _TS, nullable=False),
+)
+
+grade = Table(
+    "grade",
+    metadata,
+    Column("question_id", String, primary_key=True),
+    Column("value", String, nullable=False),
+    Column("rationale", Text, nullable=False),
+    Column("model", String, nullable=False),
+    Column("prompt_version", String, nullable=False),
+    Column("graded_at", _TS, nullable=False),
+    Column("disputed", Boolean, nullable=False, server_default="false"),
 )
 
 review_item = Table(

@@ -16,11 +16,10 @@ def _card(ku_id: str, *, due_offset_days: float, stability: float, state: str = 
         due=NOW + timedelta(days=due_offset_days),
         stability=stability,
         difficulty=5.0,
-        step=0,
+        state=state,
+        last_review=NOW - timedelta(days=abs(due_offset_days) + 1),
         reps=3,
         lapses=0,
-        last_review=NOW - timedelta(days=abs(due_offset_days) + 1),
-        state=state,
     )
 
 
