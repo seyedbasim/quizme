@@ -1,0 +1,4 @@
+# Azure Functions Python worker installs from this file at deploy time.
+# Keep in sync with pyproject.toml [project.dependencies] + the Functions SDK.
+azure-functions>=1.21
+-e ..
