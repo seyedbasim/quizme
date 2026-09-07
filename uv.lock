@@ -2009,6 +2009,12 @@ wheels = [
 ]
 
 [[package]]
+name = "qtfaststart"
+version = "1.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/60/9ca7f3fed1b5cb5c2fdc54fbb80cb660bd2a6acb6192c08463b6d0aeecee/qtfaststart-1.8.tar.gz", hash = "sha256:b0442315311f1c1130a34e4e6b04557f5f4aa332ac40bfb1d761418866749241", size = 7661, upload-time = "2013-08-08T01:29:21.06Z" }
+
+[[package]]
 name = "quizme"
 version = "0.1.0"
 source = { editable = "." }
@@ -2031,6 +2037,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "python-multipart" },
     { name = "python-telegram-bot" },
+    { name = "qtfaststart" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -2077,6 +2084,7 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "python-telegram-bot", specifier = ">=22,<23" },
+    { name = "qtfaststart", specifier = ">=1.8" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=3.0" },
     { name = "sqlalchemy", specifier = ">=2,<3" },

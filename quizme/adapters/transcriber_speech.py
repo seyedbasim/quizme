@@ -5,18 +5,42 @@ Synchronous REST call: POST the audio bytes + a definition JSON, get back
 Azure OpenAI's Whisper deployment is not.
 
 The audio is pulled from Blob using the same credential (Managed Identity in
-Azure, or a dev token).
+Azure, or a dev token). iOS Voice Memos writes the MP4 ``moov`` atom *after* the
+audio data; fast transcription streams the upload and rejects that layout with
+``422 InvalidAudioFormat``, so MP4/M4A input is remuxed to "fast start" first.
 """
 
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import httpx
 
 from quizme.domain.errors import TranscriptionError
+
+
+def _faststart(data: bytes) -> bytes:
+    """Relocate the MP4 ``moov`` atom to the front. Best-effort: return the input
+    unchanged when it is not an MP4, is already optimised, or cannot be parsed —
+    and let the service decide what to do with it."""
+    if len(data) < 12 or data[4:8] != b"ftyp":
+        return data
+    try:
+        from qtfaststart import processor  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory() as d:
+            src, dst = os.path.join(d, "in.mp4"), os.path.join(d, "out.mp4")
+            Path(src).write_bytes(data)
+            processor.process(src, dst)
+            return Path(dst).read_bytes()
+    except Exception:  # noqa: BLE001 - already-faststart / parse errors are non-fatal
+        return data
+
 
 _API_VERSION = "2024-11-15"
 _LOCALE = {"en": "en-US"}
@@ -51,7 +75,7 @@ class AzureSpeechTranscriber:
         self._base = f"https://{region}.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe"
 
     def transcribe(self, *, blob_url: str, language: str) -> TranscriptResultImpl:
-        audio = self._download(blob_url)
+        audio = _faststart(self._download(blob_url))
         locale = _LOCALE.get(language, language)
         definition = {
             "locales": [locale],

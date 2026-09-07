@@ -33,6 +33,7 @@ dependencies = [
     "azure-identity>=1.17",               # Managed Identity (AD-17)
     "azure-keyvault-secrets>=4.8",
     "azure-cognitiveservices-speech>=1.40",  # Azure AI Speech transcription
+    "qtfaststart>=1.8",                   # move MP4 moov atom to front (iOS Voice Memos)
 
     # --- delivery (Delivery adapter) ---
     "python-telegram-bot>=22,<23",
@@ -100,5 +101,5 @@ disallow_any_generics = false
 warn_return_any = false
 
 [[tool.mypy.overrides]]
-module = ["pgvector.*", "azure.*", "openai.*"]
+module = ["pgvector.*", "azure.*", "openai.*", "qtfaststart.*"]
 ignore_missing_imports = true
